@@ -15,6 +15,7 @@ coverage/
 npm-debug.log*
 
 # --- Forge / secrets ---
+.forge/
 .env
 .env.*
 *.pem

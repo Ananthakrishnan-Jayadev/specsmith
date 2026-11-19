@@ -1,6 +1,13 @@
 # SpecSmith - Atlassian Forge app
-# Current state: Phase 0 spike S1 (does a Forge rovo:agent appear in Rovo Chat and call an action?)
+# Current state: Phase 0. Spike S1 (Rovo agent + action) and the main Custom UI page.
 modules:
+  confluence:globalPage:
+    - key: specsmith-home
+      title: SpecSmith
+      route: specsmith
+      resource: main
+      resolver:
+        function: resolver
   rovo:agent:
     - key: specsmith-ping-agent
       name: SpecSmith Ping
@@ -35,6 +42,11 @@ modules:
   function:
     - key: pingFunction
       handler: index.ping
+    - key: resolver
+      handler: index.handler
+resources:
+  - key: main
+    path: static/app/build
 app:
   runtime:
     name: nodejs24.x

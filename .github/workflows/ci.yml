@@ -14,8 +14,11 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            static/app/package-lock.json
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
+      - run: npm ci --prefix static/app
+      - run: npm run check
+      - run: npm run build:ui
       # `forge lint` is run locally before every deploy; it needs the Forge CLI and login.

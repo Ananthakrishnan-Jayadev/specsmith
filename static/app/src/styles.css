@@ -1,0 +1,44 @@
+/* Uses Atlassian design tokens when the host provides them, with plain fallbacks. */
+:root {
+  --ss-text: var(--ds-text, #172b4d);
+  --ss-muted: var(--ds-text-subtle, #44546f);
+  --ss-surface: var(--ds-surface-raised, #ffffff);
+  --ss-border: var(--ds-border, #dcdfe4);
+  --ss-brand: var(--ds-background-brand-bold, #0c66e4);
+  --ss-on-brand: var(--ds-text-inverse, #ffffff);
+  --ss-success: var(--ds-text-success, #216e4e);
+  --ss-danger: var(--ds-text-danger, #ae2e24);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ss-text);
+  background: var(--ds-surface, #ffffff);
+}
+.page { max-width: 880px; margin: 0 auto; padding: 24px 16px; }
+.header h1 { margin: 0; font-size: 24px; }
+.tagline { margin: 4px 0 24px; color: var(--ss-muted); }
+.card {
+  background: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.card h2 { margin: 0 0 12px; font-size: 16px; }
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 16px; }
+.facts dt { color: var(--ss-muted); }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; word-break: break-all; }
+.muted { color: var(--ss-muted); }
+.status-ok { color: var(--ss-success); font-weight: 600; }
+.status-error { color: var(--ss-danger); font-weight: 600; }
+.button {
+  background: var(--ss-brand);
+  color: var(--ss-on-brand);
+  border: 0;
+  border-radius: 4px;
+  padding: 8px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+.button:disabled { opacity: 0.6; cursor: default; }

@@ -17,9 +17,15 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test && npm --prefix static/app run typecheck",
+    "build:ui": "npm --prefix static/app run build",
+    "dev:ui": "npm --prefix static/app run build:watch",
+    "deploy": "npm run check && npm run build:ui && forge deploy --non-interactive -e development"
   },
   "engines": {
     "node": ">=24.22"
+  },
+  "dependencies": {
+    "@forge/resolver": "^2.0.2"
   }
 }
