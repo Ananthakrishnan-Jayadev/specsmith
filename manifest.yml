@@ -1,0 +1,43 @@
+# SpecSmith - Atlassian Forge app
+# Current state: Phase 0 spike S1 (does a Forge rovo:agent appear in Rovo Chat and call an action?)
+modules:
+  rovo:agent:
+    - key: specsmith-ping-agent
+      name: SpecSmith Ping
+      description: Spike S1 - verifies that a SpecSmith Rovo agent can call a Forge action.
+      prompt: >
+        You are a connectivity test agent for the SpecSmith Forge app.
+
+        When the user says "ping" (or asks you to test the connection), call the
+        ping action, passing along any message the user gave.
+
+        Reply with exactly what the action returned: the reply, the server time and
+        the echoed message. If the action fails, say so and show the error. Never
+        invent a response.
+      conversationStarters:
+        - ping
+      actions:
+        - ping
+  action:
+    - key: ping
+      name: Ping SpecSmith
+      function: pingFunction
+      actionVerb: GET
+      description: >
+        Connectivity test. Returns "pong", the server time and the optional message
+        that was sent.
+      inputs:
+        message:
+          title: Message
+          type: string
+          required: false
+          description: Optional text to echo back.
+  function:
+    - key: pingFunction
+      handler: index.ping
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/b52c7bfa-32ff-4522-9487-c57138769496

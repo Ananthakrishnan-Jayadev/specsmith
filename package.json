@@ -1,0 +1,7 @@
+{
+  "name": "specsmith",
+  "version": "0.1.0",
+  "description": "SpecSmith: data feed specs, stories and tests for Confluence and Jira (Atlassian Forge)",
+  "private": true,
+  "license": "Apache-2.0"
+}
