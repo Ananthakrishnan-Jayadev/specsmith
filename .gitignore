@@ -1,0 +1,25 @@
+# --- Planning / Claude docs: local only (only README.md is tracked) ---
+*.md
+!README.md
+# Agent prompts are loaded by the manifest, so they ship with the code
+!prompts/*.md
+docs/
+.claude/
+
+# --- Node / build ---
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+
+# --- Forge / secrets ---
+.env
+.env.*
+*.pem
+
+# --- OS / editor ---
+.DS_Store
+.vscode/
+.idea/
