@@ -9,7 +9,7 @@ import { callProduct, describeError } from '../platform/product-api';
 import { buildMultipart } from '../platform/multipart';
 import { createHash } from 'node:crypto';
 import { planPageWrite, type ExistingPage } from '../gatekeeper/page-plan';
-import { planAttachment, type AttachmentRecord } from '../gatekeeper/attachment-plan';
+import { XSRF_HEADER, planAttachment, type AttachmentRecord } from '../gatekeeper/attachment-plan';
 import { attachedImage, heading, paragraph, table } from '../render/storage';
 import { StepRecorder } from './steps';
 
@@ -121,16 +121,15 @@ export async function spikeConfluence(spaceKey: string, dryRun: boolean, siteUrl
   const attachment = await rec.run(`attachment: ${attPlan.op}`, async () => {
     if (attPlan.op === 'skip') return { status: 'pass', detail: `unchanged (sha ${sha256.slice(0, 8)}), skipped`, value: { id: attPlan.id, sha256 } };
     const mp = buildMultipart([{ field: 'file', filename: SVG_NAME, contentType: 'image/svg+xml', content: svg }], { minorEdit: 'true' });
-    const headers = { 'Content-Type': mp.contentType, 'X-Atlassian-Token': 'no-check' };
-    if (attPlan.op === 'update') {
-      const r = await callProduct<{ id: string }>('confluence', route`/wiki/rest/api/content/${page.id}/child/attachment/${attPlan.id}/data`, { method: 'POST', rawBody: mp.body, headers });
-      if (r.ok) return { status: 'pass', detail: `updated ${SVG_NAME} (${attPlan.id}) via /data`, value: { id: attPlan.id, sha256 } };
-      if (r.status !== 404) return { status: 'fail', detail: describeError(r) };
-      // Recorded attachment was deleted by someone: fall through to create.
-    }
-    const r = await callProduct<{ results?: { id: string }[] }>('confluence', route`/wiki/rest/api/content/${page.id}/child/attachment`, { method: 'POST', rawBody: mp.body, headers });
+    const r = await callProduct<{ results?: { id: string }[] }>('confluence', route`/wiki/rest/api/content/${page.id}/child/attachment`, {
+      method: 'PUT',
+      rawBody: mp.body,
+      headers: { 'Content-Type': mp.contentType, ...XSRF_HEADER },
+    });
     const id = r.data?.results?.[0]?.id;
-    return r.ok && id ? { status: 'pass', detail: `created ${SVG_NAME} → ${id}`, value: { id, sha256 } } : { status: 'fail', detail: describeError(r) };
+    return r.ok && id
+      ? { status: 'pass', detail: `${recorded ? 'updated' : 'created'} ${SVG_NAME} → ${id}`, value: { id, sha256 } }
+      : { status: 'fail', detail: describeError(r) };
   });
 
   await rec.run('write SpecSmith page property', async () => {
