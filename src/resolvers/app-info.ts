@@ -16,5 +16,6 @@ export function buildAppInfo(context: Record<string, unknown>, now: Date): AppIn
     accountId: str(context, 'accountId'),
     cloudId: str(context, 'cloudId'),
     moduleKey: str(context, 'moduleKey'),
+    siteUrl: str(context, 'siteUrl'),
   };
 }

@@ -1,15 +1,25 @@
 import { makeResolver } from '@forge/resolver';
 import type { SpecSmithApi } from '../shared/api';
 import { buildAppInfo } from './app-info';
+import { listTargets } from '../spikes/targets';
+import { spikeConfluence } from '../spikes/confluence';
+import { spikeJira } from '../spikes/jira';
+import { spikeStorage } from '../spikes/storage';
+import { queueStatus, startQueueSpike } from '../spikes/queue';
+
+const siteUrlOf = (context: Record<string, unknown>): string | null =>
+  typeof context['siteUrl'] === 'string' ? context['siteUrl'] : null;
 
 /**
  * Backend for the SpecSmith Custom UI. Each key must match SpecSmithApi.
- * Handlers stay thin: they unpack the request and call pure functions.
+ * Handlers stay thin: they unpack the request and call other modules.
  */
 export const handler = makeResolver<SpecSmithApi>({
-  getAppInfo: ({ context }) => {
-    // Spike: record which context fields Forge provides (keys only, no values).
-    console.log(`[specsmith] getAppInfo context keys: ${Object.keys(context).sort().join(',')}`);
-    return buildAppInfo(context, new Date());
-  },
+  getAppInfo: ({ context }) => buildAppInfo(context, new Date()),
+  listTargets: () => listTargets(),
+  spikeConfluence: ({ payload, context }) => spikeConfluence(payload.spaceKey, payload.dryRun, siteUrlOf(context)),
+  spikeJira: ({ payload, context }) => spikeJira(payload.projectKey, payload.dryRun, payload.pageUrl, siteUrlOf(context)),
+  spikeStorage: () => spikeStorage(),
+  spikeQueueStart: ({ payload }) => startQueueSpike(payload.events, payload.longSleepSeconds),
+  spikeQueueStatus: ({ payload }) => queueStatus(payload.jobId),
 });

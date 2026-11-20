@@ -4,3 +4,4 @@
  */
 export { ping } from './actions/ping';
 export { handler } from './resolvers';
+export { spikeConsumer } from './spikes/queue';

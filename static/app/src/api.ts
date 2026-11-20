@@ -1,9 +1,9 @@
 import { makeInvoke } from '@forge/bridge';
 import type { SpecSmithApi } from '../../../src/shared/api';
 
-export type { AppInfo } from '../../../src/shared/api';
+export type { AppInfo, QueueStatus, SpikeReport, Targets } from '../../../src/shared/api';
 
 /** Typed against the backend resolver: wrong keys or shapes fail to compile. */
-const invoke = makeInvoke<SpecSmithApi>();
+export const api = makeInvoke<SpecSmithApi>();
 
-export const getAppInfo = () => invoke('getAppInfo');
+export const getAppInfo = () => api('getAppInfo');

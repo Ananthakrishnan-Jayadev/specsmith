@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getAppInfo, type AppInfo } from './api';
+import { Spikes } from './Spikes';
 
 type State =
   | { kind: 'loading' }
@@ -55,6 +56,8 @@ export function App() {
           Check again
         </button>
       </section>
+
+      <Spikes />
     </main>
   );
 }

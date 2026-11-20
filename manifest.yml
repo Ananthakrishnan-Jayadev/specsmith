@@ -25,6 +25,11 @@ modules:
         - ping
       actions:
         - ping
+  rovo:mcp:
+    - key: specsmith-mcp
+      name: SpecSmith
+      tools:
+        - ping
   action:
     - key: ping
       name: Ping SpecSmith
@@ -39,11 +44,28 @@ modules:
           type: string
           required: false
           description: Optional text to echo back.
+  consumer:
+    - key: specsmith-spike-consumer
+      queue: specsmith-spike
+      function: spikeConsumerFn
   function:
+    - key: spikeConsumerFn
+      handler: index.spikeConsumer
+      timeoutSeconds: 900
     - key: pingFunction
       handler: index.ping
     - key: resolver
       handler: index.handler
+permissions:
+  scopes:
+    # Each scope is the one the Confluence/Jira OpenAPI spec lists for an endpoint we call.
+    - read:space:confluence      # GET /wiki/api/v2/spaces (find target space)
+    - read:page:confluence       # GET /wiki/api/v2/pages (duplicate-title check), page properties
+    - write:page:confluence      # POST/PUT /wiki/api/v2/pages, page properties
+    - write:confluence-file      # PUT /wiki/rest/api/content/{id}/child/attachment (ERD, exports)
+    - read:jira-work             # projects, create metadata, link types, transitions
+    - write:jira-work            # create issues, issue links, remote links, transitions
+    - storage:app                # Forge KVS (specs, run log)
 resources:
   - key: main
     path: static/app/build
