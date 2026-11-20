@@ -1,57 +1,160 @@
 # SpecSmith
 
-> From raw data feed to signed-off spec, stories and tests in minutes, and it keeps them right when the feed changes. AI drafts, rules decide, humans approve.
+**Data feed specs, stories and tests for Confluence and Jira, kept right when the feed changes.**
 
-**Hackathon:** Codegeist 2026 (Atlassian, run on Devpost): codegeist2026.devpost.com
-**Deadline:** Tuesday, Dec 22, 2026, 12:00 pm PT (3:00 pm Toronto). Internal target: **Dec 20**.
-**Category:** Apps for Specialized Industries (finance / data engineering)
-**Bonus prizes targeted:** Best Agents (Rovo), Best app with Atlassian MCP, and Teamwork Graph as a stretch
+SpecSmith is an [Atlassian Forge](https://developer.atlassian.com/platform/forge/) app for data teams. Upload the CSV extracts for a new data feed, and SpecSmith profiles them, builds a reviewable column-level spec, publishes it to Confluence, plans the delivery work in Jira, and generates the test plan. When the next version of the feed arrives, it detects what changed and updates everything that depends on it.
 
----
+> **AI drafts, rules decide, humans approve.**
+> Anything that can be decided by rules is decided by rules. Rovo agents only fill the gaps, every AI suggestion is reviewed before it's used, and every write to Confluence or Jira is previewed with a dry run first.
 
-## Elevator pitch
-
-Every time a data team onboards a new feed, someone spends days hand-writing column specs in Confluence, creating the same Jira stories, and drafting hundreds of test cases. Then the feed changes, and nobody updates any of it. One typo or one silently renamed column across 200 columns turns into a production defect weeks later.
-
-**SpecSmith** turns that into minutes and keeps it true over time. Drop in your CSV extracts:
-
-- **Rules** profile the data, infer types, keys, relationships and PII hints, and build the spec.
-- A **crew of 8 Rovo agents** fills in the gaps: descriptions, PII verdicts with cited evidence, test wording, and drift impact summaries.
-- **Humans** review every suggestion, sign off each file, and approve every write after a dry-run preview.
-- SpecSmith publishes **Confluence spec pages, linked Jira stories, a test plan with traceability, and an export pack** (DDL, dbt tests, a data contract).
-- When **v2 of the feed arrives**, SpecSmith detects the drift, versions the spec, raises change stories and re-plans the affected tests.
-- Approved column definitions are **reused** across feeds, so the tenth feed is faster than the first.
-
-It's built for data teams in banking, insurance and healthcare, where getting it wrong isn't an option.
-
-## Where this idea comes from
-
-SpecSmith is a clean, generic rebuild of an idea from a previous internal QA-automation project. It uses no code, names or data from that project. Everything is written from scratch on Forge in TypeScript, and the demo uses synthetic data.
+> **Status: early development.** The platform foundations are built and verified: Confluence and Jira writes, storage, background jobs, Rovo agents and MCP tools. The product features below are being built now. See [Roadmap](#roadmap).
 
 ---
 
-## Repository layout
+## Why
 
-| Path | What it's for |
+Onboarding a data feed usually means:
+- days of hand-writing column specs in Confluence
+- creating the same Jira stories again
+- drafting hundreds of test cases
+
+And when the feed changes three weeks later, nobody updates any of it. One silently renamed column across 200 columns becomes a production defect.
+
+SpecSmith treats the spec as a living artifact with a full lifecycle:
+
+```
+Intake → Spec → Enrich (AI) → Review & sign-off → Deliver (Jira) → Test → Change (v2 arrives) → Reuse
+```
+
+## Features
+
+| Area | What it does |
 |---|---|
-| `README.md` | This overview (setup and usage for judges will be added here) |
-| `prompts/*.md` | System prompts for the 8 Rovo agents, loaded by the Forge manifest |
-| `LICENSE` | Apache-2.0 |
+| **Profiling** | Parses CSVs **in your browser**, so raw data never leaves your machine. Only column profiles are sent: types, null %, lengths, patterns and hashed values. |
+| **Rules engine** | Infers types, keys, naming-convention fixes, nullability and PII hints, and finds relationships across files. Rules are driven by config files you can edit. |
+| **Spec editor** | An editable grid where every value shows its source (`user`, `config`, `reused`, `derived`, `ai` or `tbd`). Unverified values are highlighted yellow, in the app and in Confluence. |
+| **Confluence publishing** | Parent and per-file spec pages, an ER diagram, and a live status macro. Updates are idempotent and protected against overwriting edits made outside SpecSmith. |
+| **Jira planning** | An Epic plus template-driven stories with BDD acceptance criteria, linked both ways to the spec. |
+| **Test design** | Rules choose the checks (type, length, nullability, keys, relationships, PII masking), and the test plan includes a traceability matrix. |
+| **Export pack** | Target DDL, dbt `schema.yml`, a data contract (YAML), JSON Schema and SQL check scripts. |
+| **Rovo agent crew** | Eight narrow agents that draft descriptions, PII verdicts with cited evidence, test wording and change summaries. Code validates their output, and a human accepts or rejects it. |
+| **Schema drift** | Upload v2 of a feed to see added, removed and renamed columns, type and PII changes. SpecSmith versions the spec, raises change stories and re-plans only the affected tests. |
+| **Reuse** | Column definitions approved for one feed pre-fill matching columns in the next. |
+| **Sign-off** | Per-file review states, with the sign-off story moved forward automatically when every file is approved. |
+| **MCP tools** | Read-only and plan-only tools for external AI clients through Rovo MCP. MCP never writes directly. |
 
----
+## How it stays safe
 
-## Key decisions
+- **Facts, not files.** Agents receive extracted column facts only, never raw data or page content. This is the main defense against prompt injection.
+- **Validated in code.** AI output is checked against schemas, fixed value lists, length limits and evidence requirements before it can even become a suggestion.
+- **Precedence.** `user > config > reused > derived > ai > tbd`, enforced in one function. AI can never overwrite a value set by a person or derived by a rule.
+- **One write path.** Every Confluence and Jira write goes through a single gatekeeper that does dry runs, per-row results (`created | updated | skipped | failed | dry-run`), retries, and **fails closed** on ambiguity such as duplicate titles, missing parents or version conflicts.
+- **Runs as you.** API calls run as the signed-in user, so SpecSmith can never do more than the person clicking Approve.
+- **Works with AI off.** Without Rovo, everything still works. Unfilled fields stay `tbd` and highlighted.
 
-1. **Platform:** Atlassian Forge, TypeScript, React Custom UI. Coded with Claude Code, deployed with the Forge CLI.
-2. **Where the AI runs:** in Rovo agents, so usage is billed to the site's Rovo allowance. Avoid the Forge LLMs API (no free quota, billed per token).
-3. **AI vs rules:** rules decide anything that can be decided by rules. AI only fills TBD fields, never overwrites, and must cite evidence.
-4. **Source of truth:** the spec lives in app storage. Confluence and Jira are rendered outputs, updated idempotently.
-5. **Lifecycle, not one-shot:** versioning, drift detection and reuse are what make SpecSmith stand out (see `FEATURES.md`).
-6. **No Xray dependency:** tests become a Confluence test plan and optional Jira issues, so judges don't need any extra apps.
-7. **Demo data:** a synthetic retail banking feed (customers, accounts, transactions, cards) in **v1 and v2**, generated by a script in `demo-data/`.
+## Requirements
 
-## Status
+- An Atlassian Cloud site with **Confluence** and **Jira**.
+- **Rovo** enabled on the site for the AI agents. This is optional, because the app works without it.
+- A Jira project that has **Epic** and **Story** (or Task) issue types. A team-managed Scrum project works out of the box.
 
-- [x] Atlassian developer account created
-- [x] Scope and plan rewritten for the 5-week build (Nov 16)
-- [ ] Phase 0: setup and spikes (see `PLAN.md`)
+## Development setup
+
+You need Node.js **24.22 or newer** (required by Forge CLI 15) and an Atlassian account.
+
+```bash
+npm install -g @forge/cli        # Forge CLI
+forge login                      # use an API token with the Forge scope
+
+git clone https://github.com/Ananthakrishnan-Jayadev/specsmith.git
+cd specsmith
+npm install
+npm install --prefix static/app
+
+forge register                   # registers your own copy of the app (new app id)
+npm run deploy                   # checks + UI build + forge deploy (development)
+
+# SpecSmith uses both products, so install into both:
+forge install --site <your-site>.atlassian.net --product confluence --environment development
+forge install --site <your-site>.atlassian.net --product jira --environment development
+```
+
+Open **Confluence → Apps → SpecSmith**.
+
+If a deploy changes permission scopes, Forge treats it as a major version: run `forge deploy --approve MAJOR_VERSION_RULE`, then `forge install --upgrade` for each product.
+
+### Live development
+
+```bash
+npm run dev:ui      # terminal 1: rebuild the UI on save
+forge tunnel        # terminal 2: route calls to your machine, stream logs
+```
+
+Reload the page to see UI changes. Restart the tunnel after editing `manifest.yml`.
+
+### Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run check` | Typecheck, lint and unit tests (backend and UI) |
+| `npm test` | Unit tests (Vitest) |
+| `npm run build:ui` | Build the Custom UI into `static/app/build` |
+| `npm run deploy` | `check`, then `build:ui`, then `forge deploy` to development |
+
+## Architecture
+
+```
+Browser (Custom UI, React)                  Forge backend                       Atlassian
+CSV → profiler (web worker) ──invoke──► resolvers → rules engine → spec store (KVS)
+          raw data stays here                │
+Review / approve ─────────────invoke──► gatekeeper ─► queue ─► Confluence / Jira (asUser)
+                                             └─► run log
+Rovo agents ─► actions (facts only) ─► guardrails ─► pending suggestions ─► human review
+External AI clients ─► Rovo MCP ─► read-only / plan-only tools
+```
+
+```
+manifest.yml        Forge modules, scopes, resources
+src/
+  shared/           API contract shared by UI and backend (compile-time checked)
+  rules/            pure rule functions (precedence, types, keys, PII hints, …)
+  gatekeeper/       write planning: create / update / skip / fail closed
+  render/           Confluence storage format and Jira ADF builders
+  platform/         product API wrapper (asUser), multipart builder
+  resolvers/        Custom UI backend
+  actions/          Rovo action handlers
+static/app/         React Custom UI (Vite)
+prompts/            system prompts for the Rovo agents
+tests/              Vitest unit tests
+```
+
+### Permissions
+
+Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith calls:
+
+| Scope | Used for |
+|---|---|
+| `read:space:confluence` | Find the target space |
+| `read:page:confluence` | Duplicate-title checks, page properties |
+| `write:page:confluence` | Create and update spec pages and page properties |
+| `write:confluence-file` | Attach the ER diagram and export files |
+| `read:jira-work` | Projects, issue types, link types, transitions |
+| `write:jira-work` | Create issues, links, remote links; transition issues |
+| `storage:app` | App storage (specs, run history) |
+
+## Roadmap
+
+- [x] Platform foundations: Custom UI with a typed backend, Rovo agent and actions, MCP tool, Confluence and Jira writes, storage, background jobs
+- [ ] Intake: browser profiling and the rules engine
+- [ ] Spec editor and Confluence publishing with dry run
+- [ ] Gatekeeper, Jira story planner and run history
+- [ ] Relationship detection, ER diagram and export pack
+- [ ] Rovo agent crew, guardrails and the suggestion review panel
+- [ ] Test design and traceability
+- [ ] Review and sign-off workflow
+- [ ] Schema drift detection and spec versioning
+- [ ] Cross-feed reuse, status macro, Jira issue panel and MCP tools
+
+## License
+
+[Apache-2.0](LICENSE)
