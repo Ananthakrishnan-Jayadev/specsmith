@@ -13,16 +13,22 @@ export function escapeXml(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
+export const COLOURS = { yellow: '#fff0b3', grey: '#f4f5f7', purple: '#eae6ff' } as const;
+
 export interface Cell {
   text: string;
-  /** Yellow highlight = not verified (tbd / ai / derived needing review). */
-  highlight?: boolean;
+  /** true = yellow (TBD); or an explicit colour from COLOURS. */
+  highlight?: boolean | string;
+  /** Render the text in monospace. */
+  code?: boolean;
 }
 
 /** One highlighted cell, in the markup the Confluence editor itself produces. */
 function td(cell: Cell): string {
-  const attrs = cell.highlight ? ' class="highlight-#fff0b3" data-highlight-colour="#fff0b3"' : '';
-  return `<td${attrs}><p>${escapeXml(cell.text)}</p></td>`;
+  const colour = cell.highlight === true ? COLOURS.yellow : typeof cell.highlight === 'string' ? cell.highlight : null;
+  const attrs = colour ? ` class="highlight-${colour}" data-highlight-colour="${colour}"` : '';
+  const text = escapeXml(cell.text);
+  return `<td${attrs}><p>${cell.code ? `<code>${text}</code>` : text}</p></td>`;
 }
 
 export function table(headers: string[], rows: Cell[][]): string {
@@ -42,4 +48,18 @@ export function heading(level: 1 | 2 | 3, text: string): string {
 /** Embeds an image attached to the same page. */
 export function attachedImage(filename: string): string {
   return `<ac:image><ri:attachment ri:filename="${escapeXml(filename)}" /></ac:image>`;
+}
+
+/** Confluence info panel macro. `inner` must already be storage format. */
+export function infoPanel(inner: string): string {
+  return `<ac:structured-macro ac:name="info"><ac:rich-text-body>${inner}</ac:rich-text-body></ac:structured-macro>`;
+}
+
+/** Lists the page's child pages. */
+export function childrenMacro(): string {
+  return '<ac:structured-macro ac:name="children" />';
+}
+
+export function bulletList(items: string[]): string {
+  return `<ul>${items.map((i) => `<li>${escapeXml(i)}</li>`).join('')}</ul>`;
 }

@@ -101,6 +101,18 @@ Reload the page to see UI changes. Restart the tunnel after editing `manifest.ym
 | `npm run build:ui` | Build the Custom UI into `static/app/build` |
 | `npm run deploy` | `check`, then `build:ui`, then `forge deploy` to development |
 
+## Using SpecSmith
+
+1. Open **Apps → SpecSmith** in Confluence.
+2. Drop in the CSV extracts for a feed. They are profiled in your browser.
+3. Review the spec. Yellow cells need a decision; hover a badge to see why a value was chosen; click a cell to edit it.
+4. Pick a space and click **Preview (dry run)** to see exactly which pages would be created, updated or skipped, and why.
+5. Click **Approve & publish**. Each page reports `created`, `updated`, `skipped` or `failed`, and every run is kept in **Run history**.
+
+Publishing again with no changes skips every page. If someone edits a generated page directly in Confluence, SpecSmith refuses to overwrite it and tells you which page changed.
+
+On the published pages, **yellow** means TBD, **grey** means derived by rules and not yet confirmed by a person, **purple** means an AI suggestion a reviewer accepted, and **no colour** means set by a person or by configuration.
+
 ## Demo data
 
 `demo-data/retail-accounts/` holds a synthetic **Retail Accounts** feed: `customers`, `accounts`, `transactions` and `cards` (about 4,900 rows in total) in two versions. Everything is fake and deterministic, so you can regenerate it with `npm run demo-data`.
@@ -182,7 +194,7 @@ Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith c
 - [x] Platform foundations: Custom UI with a typed backend, Rovo agent and actions, MCP tool, Confluence and Jira writes, storage, background jobs
 - [x] Rules engine and column profiler (config-driven, tested on the demo feed)
 - [x] Intake UI: upload, profiling in a web worker, spec grid with source badges and inline editing
-- [ ] Spec editor and Confluence publishing with dry run
+- [x] Spec editor and Confluence publishing with dry run (idempotent, fails closed on outside edits, run history)
 - [ ] Gatekeeper, Jira story planner and run history
 - [ ] Relationship detection, ER diagram and export pack
 - [ ] Rovo agent crew, guardrails and the suggestion review panel

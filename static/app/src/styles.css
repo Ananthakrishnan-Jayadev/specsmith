@@ -124,3 +124,19 @@ td.profile .samples { overflow-wrap: anywhere; }
 .sev-error { background: var(--ds-background-danger, #ffeceb); color: var(--ss-danger); }
 .sev-warning { background: var(--ds-background-warning, #fff7d6); color: var(--ds-text-warning, #a54800); }
 .sev-info { background: var(--ss-subtle); color: var(--ss-muted); }
+
+/* ---- Publish ---- */
+.publish { border-top: 1px solid var(--ss-border); margin-top: 20px; padding-top: 12px; }
+.publish h2 { font-size: 16px; margin: 0 0 8px; }
+.publish .row { align-items: flex-end; }
+.publish select { padding: 6px; font: inherit; min-width: 240px; }
+.button-secondary { background: var(--ss-surface); color: var(--ss-text); border: 1px solid var(--ss-border); }
+.saved-note { align-self: flex-end; font-size: 12px; }
+.feed-header select { padding: 6px; font: inherit; min-width: 220px; }
+.pill-created, .pill-updated { background: var(--ds-background-success, #dcfff1); color: var(--ss-success); }
+.pill-skipped { background: var(--ds-background-neutral, #f1f2f4); color: var(--ss-muted); }
+.pill-failed { background: var(--ds-background-danger, #ffeceb); color: var(--ss-danger); }
+.pill-dry-run { background: var(--ds-background-information, #e9f2ff); color: var(--ds-text-information, #0055cc); }
+.runs { margin-top: 12px; font-size: 13px; }
+.runs ul { list-style: none; padding-left: 0; }
+.runs summary { cursor: pointer; }

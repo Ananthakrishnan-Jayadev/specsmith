@@ -7,6 +7,12 @@
  * A mismatch between the two sides is a compile error.
  */
 
+import type { FeedMeta, RunRecord } from '../domain/feed';
+import type { FileSpec } from '../domain/spec';
+
+export type { FeedMeta, RunRecord, RunRow, RowStatus } from '../domain/feed';
+export type { FileSpec } from '../domain/spec';
+
 export interface AppInfo {
   app: 'SpecSmith';
   version: string;
@@ -51,6 +57,13 @@ export interface QueueStatus {
 
 export type SpecSmithApi = {
   getAppInfo: () => AppInfo;
+  listSpaces: () => Targets;
+  listFeeds: () => FeedMeta[];
+  getFeed: (p: { feedId: string }) => { meta: FeedMeta; files: FileSpec[] };
+  saveFeed: (p: { feedId: string | null; name: string; fileNames: string[] }) => FeedMeta;
+  saveFile: (p: { feedId: string; spec: FileSpec }) => { ok: true };
+  publishFeed: (p: { feedId: string; spaceKey: string; dryRun: boolean }) => RunRecord;
+  listRuns: (p: { feedId: string }) => RunRecord[];
   listTargets: () => Targets;
   spikeConfluence: (p: { spaceKey: string; dryRun: boolean }) => SpikeReport;
   spikeJira: (p: { projectKey: string; dryRun: boolean; pageUrl: string | null }) => SpikeReport;

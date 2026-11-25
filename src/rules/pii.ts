@@ -49,5 +49,5 @@ export function detectPii(p: ColumnProfile, cfg: PiiConfig): FieldValue<PiiSpec 
 /** Replaces sample values with their shapes when the column is (or may be) sensitive. */
 export function maskSamples(samples: string[], pii: PiiSpec | null): string[] {
   if (!pii || pii.classification === 'NONE') return samples;
-  return samples.map((s) => `‹${shapeOf(s)}›`);
+  return samples.map((s) => (s.startsWith('‹') ? s : `‹${shapeOf(s)}›`)); // idempotent
 }
