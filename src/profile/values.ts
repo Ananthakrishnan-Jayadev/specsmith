@@ -131,7 +131,9 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IPV4_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 const PHONE_RE = /^\+?[\d\s().-]{10,20}$/;
-const POSTAL_RE = /^([A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d|\d{5}(-\d{4})?)$/;
+// Content signals must not fire on bare digit runs (IDs, codes): only formatted shapes count.
+// Bare digits are still caught when the column NAME matches a keyword (rules/pii.ts).
+const POSTAL_RE = /^([A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d|\d{5}-\d{4})$/;
 
 export function isIpv4(v: string): boolean {
   const m = IPV4_RE.exec(v);
@@ -139,7 +141,7 @@ export function isIpv4(v: string): boolean {
 }
 
 export function isPhone(v: string): boolean {
-  if (!PHONE_RE.test(v)) return false;
+  if (!PHONE_RE.test(v) || /^\d+$/.test(v)) return false; // bare digits are IDs, not phones
   const digits = v.replace(/\D/g, '');
   return digits.length === 10 || digits.length === 11;
 }

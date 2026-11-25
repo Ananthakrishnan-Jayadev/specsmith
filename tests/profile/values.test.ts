@@ -59,8 +59,10 @@ describe('content signals', () => {
     expect(isPhone('(416) 555-0199')).toBe(true);
     expect(isPhone('+1 416 555 0199')).toBe(true);
     expect(isPhone('555-0199')).toBe(false);
+    expect(isPhone('9000000296')).toBe(false); // bare 10-digit ID
+    expect(isPostal('00296')).toBe(false); // bare 5-digit code
+    expect(isPostal('90210-1234')).toBe(true);
     expect(isPostal('K1A 0B1')).toBe(true);
-    expect(isPostal('90210')).toBe(true);
   });
 
   it('hashes deterministically', () => {

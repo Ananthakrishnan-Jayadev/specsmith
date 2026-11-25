@@ -181,7 +181,7 @@ Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith c
 
 - [x] Platform foundations: Custom UI with a typed backend, Rovo agent and actions, MCP tool, Confluence and Jira writes, storage, background jobs
 - [x] Rules engine and column profiler (config-driven, tested on the demo feed)
-- [ ] Intake UI: upload and browser profiling
+- [x] Intake UI: upload, profiling in a web worker, spec grid with source badges and inline editing
 - [ ] Spec editor and Confluence publishing with dry run
 - [ ] Gatekeeper, Jira story planner and run history
 - [ ] Relationship detection, ER diagram and export pack
