@@ -1,0 +1,18 @@
+{
+  "$comment": "PII/PCI hints. A keyword matches whole name tokens (e.g. 'sin' matches c_sin, not business). A signal is a profiler content count; minShare is the share of non-null values that must match. PCI wins over PII; keyword+signal beats keyword or signal alone.",
+  "rules": [
+    { "category": "card_number", "classification": "PCI", "keywords": ["pan", "card_no", "card_num", "card_number", "cc_no"], "signal": "luhnCard", "minShare": 0.95 },
+    { "category": "card_security_code", "classification": "PCI", "keywords": ["cvv", "cvc", "cvv2", "csc"] },
+    { "category": "card_expiry", "classification": "PCI", "keywords": ["exp_mm_yy", "card_exp", "card_expiry", "expiry_dt"] },
+    { "category": "cardholder_name", "classification": "PCI", "keywords": ["cardholder", "cardholder_nm", "card_holder"] },
+    { "category": "government_id", "classification": "PII", "keywords": ["sin", "ssn", "nin", "national_id", "tax_id", "passport"], "signal": "luhn9", "minShare": 0.95 },
+    { "category": "email", "classification": "PII", "keywords": ["email", "e_mail"], "signal": "email", "minShare": 0.9 },
+    { "category": "phone", "classification": "PII", "keywords": ["phone", "tel", "mobile", "cell"], "signal": "phone", "minShare": 0.9 },
+    { "category": "person_name", "classification": "PII", "keywords": ["first_nm", "last_nm", "first_name", "last_name", "full_name", "surname", "given_name"] },
+    { "category": "date_of_birth", "classification": "PII", "keywords": ["dob", "birth_dt", "birth_date", "date_of_birth"] },
+    { "category": "address", "classification": "PII", "keywords": ["addr", "address", "street"] },
+    { "category": "postal_code", "classification": "PII", "keywords": ["postal", "postal_cd", "zip", "postcode"], "signal": "postal", "minShare": 0.9 },
+    { "category": "ip_address", "classification": "PII", "keywords": ["ip", "ip_addr", "ip_address"], "signal": "ipv4", "minShare": 0.9 },
+    { "category": "device_id", "classification": "PII", "keywords": ["device_id"] }
+  ]
+}

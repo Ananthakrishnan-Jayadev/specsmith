@@ -1,0 +1,18 @@
+{
+  "$comment": "Spec lint rules: severity per rule id, or \"off\".",
+  "rules": {
+    "header": "warning",
+    "all-null": "warning",
+    "no-primary-key": "warning",
+    "key-nullable": "error",
+    "unclear-name": "warning",
+    "reserved-word": "warning",
+    "name-too-long": "error",
+    "name-collision": "error",
+    "ambiguous-date-format": "warning",
+    "mixed-types": "warning",
+    "untrimmed-values": "info",
+    "constant-column": "info",
+    "pii-review": "info"
+  }
+}

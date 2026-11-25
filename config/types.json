@@ -1,0 +1,11 @@
+{
+  "$comment": "Type inference rules. Shares are fractions of non-null values.",
+  "nullTokens": ["null", "n/a", "na", "none", "\\n"],
+  "booleanTokens": ["true", "false", "t", "f", "y", "n", "yes", "no"],
+  "typeThreshold": 0.98,
+  "lengthHeadroom": 1.5,
+  "standardLengths": [1, 2, 3, 5, 10, 20, 30, 50, 100, 255, 500, 1000, 4000],
+  "decimalExtraIntegerDigits": 2,
+  "maxDecimalPrecision": 38,
+  "integerMaxPrecision": 18
+}

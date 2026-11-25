@@ -1,0 +1,17 @@
+{
+  "$comment": "Target naming convention. Source names are converted to snake_case; abbreviations are expanded when enabled.",
+  "maxLength": 63,
+  "expandAbbreviations": true,
+  "abbreviations": {
+    "acct": "account", "addr": "address", "alt": "alternate", "amt": "amount", "bal": "balance",
+    "cd": "code", "cust": "customer", "dt": "date", "exp": "expiry", "ind": "indicator",
+    "nm": "name", "no": "number", "num": "number", "prov": "province", "stmt": "statement",
+    "ts": "timestamp", "txn": "transaction", "txt": "text"
+  },
+  "reservedWords": [
+    "all", "and", "as", "by", "case", "column", "comment", "date", "default", "desc", "from", "group",
+    "index", "key", "level", "number", "or", "order", "select", "table", "timestamp", "to", "type",
+    "user", "value", "where"
+  ],
+  "unclearNamePatterns": ["^col_?\\d+$", "^column_?\\d+$", "^field_?\\d+$", "^flag_?[a-z0-9]?$", "^misc", "^tmp", "^temp", "^x+$"]
+}

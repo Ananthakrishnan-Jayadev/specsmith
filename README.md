@@ -101,6 +101,36 @@ Reload the page to see UI changes. Restart the tunnel after editing `manifest.ym
 | `npm run build:ui` | Build the Custom UI into `static/app/build` |
 | `npm run deploy` | `check`, then `build:ui`, then `forge deploy` to development |
 
+## Demo data
+
+`demo-data/retail-accounts/` holds a synthetic **Retail Accounts** feed: `customers`, `accounts`, `transactions` and `cards` (about 4,900 rows in total) in two versions. Everything is fake and deterministic, so you can regenerate it with `npm run demo-data`.
+
+- **v1** includes the things SpecSmith should catch:
+  - PII and PCI columns
+  - leading-zero codes
+  - `DD/MM/YYYY` dates
+  - unclear columns (`col_17`, `FLAG_X`)
+  - untrimmed values and `N/A` null tokens
+  - one prompt-injection string in free text, used as a guardrail test fixture
+- **v2** changes the schema, for the drift demo:
+  - `customers.c_email` is renamed to `email_address`
+  - `customers.alt_phone_no` is added (a new PII column)
+  - `customers.FLAG_X` is dropped
+  - `accounts.branch_no` is widened from 5 to 7 characters
+
+## Rules configuration
+
+All deterministic rules read their settings from `config/`:
+
+| File | Controls |
+|---|---|
+| `types.json` | null and boolean tokens, the type-inference threshold, length headroom and standard sizes |
+| `naming.json` | snake_case target names, abbreviation expansion, reserved words, "unclear name" patterns |
+| `pii.json` | PII and PCI categories: name keywords plus content signals (email shape, Luhn-valid numbers, IPs, phone and postal shapes) |
+| `lint.json` | the severity of each spec check, or `off` |
+
+Every derived value records its **evidence**, for example *"rule card_number: name contains "card_no"; 100.0% of values match luhnCard pattern"*. Rules never mark a column as non-PII; that is left `tbd` for a human or the PII Classifier agent to decide.
+
 ## Architecture
 
 ```
@@ -117,13 +147,18 @@ External AI clients ─► Rovo MCP ─► read-only / plan-only tools
 manifest.yml        Forge modules, scopes, resources
 src/
   shared/           API contract shared by UI and backend (compile-time checked)
-  rules/            pure rule functions (precedence, types, keys, PII hints, …)
+  domain/           profile and spec types (every spec field carries its source)
+  profile/          streaming column profiler (runs in the browser)
+  rules/            pure rule functions (precedence, types, keys, naming, PII hints, lint)
+  spec/             build a spec from profiles; merge without overriding human edits
   gatekeeper/       write planning: create / update / skip / fail closed
   render/           Confluence storage format and Jira ADF builders
   platform/         product API wrapper (asUser), multipart builder
   resolvers/        Custom UI backend
   actions/          Rovo action handlers
 static/app/         React Custom UI (Vite)
+config/             rule settings (JSON)
+demo-data/          synthetic demo feed generator and CSVs
 prompts/            system prompts for the Rovo agents
 tests/              Vitest unit tests
 ```
@@ -145,7 +180,8 @@ Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith c
 ## Roadmap
 
 - [x] Platform foundations: Custom UI with a typed backend, Rovo agent and actions, MCP tool, Confluence and Jira writes, storage, background jobs
-- [ ] Intake: browser profiling and the rules engine
+- [x] Rules engine and column profiler (config-driven, tested on the demo feed)
+- [ ] Intake UI: upload and browser profiling
 - [ ] Spec editor and Confluence publishing with dry run
 - [ ] Gatekeeper, Jira story planner and run history
 - [ ] Relationship detection, ER diagram and export pack
