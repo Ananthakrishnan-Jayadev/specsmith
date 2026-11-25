@@ -20,7 +20,8 @@
     "check": "npm run typecheck && npm run lint && npm test && npm --prefix static/app run typecheck",
     "build:ui": "npm --prefix static/app run build",
     "dev:ui": "npm --prefix static/app run build:watch",
-    "deploy": "npm run check && npm run build:ui && forge deploy --non-interactive -e development"
+    "deploy": "npm run check && npm run build:ui && forge deploy --non-interactive -e development",
+    "demo-data": "node demo-data/generate.mts"
   },
   "engines": {
     "node": ">=24.22"
