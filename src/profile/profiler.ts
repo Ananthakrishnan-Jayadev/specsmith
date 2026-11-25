@@ -56,7 +56,7 @@ export function normalizeHeaders(raw: string[]): { names: string[]; warnings: st
   const warnings: string[] = [];
   const seen = new Map<string, number>();
   const names = raw.map((h, i) => {
-    let name = i === 0 ? h.replace(/^﻿/, '') : h;
+    let name = i === 0 ? h.replace(/^\uFEFF/, '') : h;
     if (name !== name.trim()) {
       warnings.push(`Column ${i + 1} header "${name}" has leading/trailing spaces (trimmed).`);
       name = name.trim();

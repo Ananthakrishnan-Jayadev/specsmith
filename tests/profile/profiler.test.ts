@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizeHeaders, profileRows } from '../../src/profile/profiler';
 
 const rows = [
-  ['﻿cust_id', 'email', 'dob', 'balance', 'flag', ' notes ', 'email'],
+  ['\uFEFFcust_id', 'email', 'dob', 'balance', 'flag', ' notes ', 'email'],
   ['C001', 'a.b@example.com', '1980-01-31', '10.50', 'Y', 'x', 'dup'],
   ['C002', 'c@example.org', '1975-12-01', '-3', 'N', '', 'dup'],
   ['C003', 'NULL', '1990-06-15', '0.125', 'y', 'n/a', 'dup'],
@@ -11,7 +11,11 @@ const rows = [
 
 describe('profileRows', () => {
   const p = profileRows('customers.csv', rows);
-  const col = (name: string) => p.columns.find((c) => c.name === name)!;
+  const col = (name: string) => {
+    const c = p.columns.find((x) => x.name === name);
+    if (!c) throw new Error(`no column ${name}`);
+    return c;
+  };
 
   it('counts rows, nulls and distinct values', () => {
     expect(p.rowCount).toBe(4);
@@ -46,9 +50,9 @@ describe('profileRows', () => {
 
   it('caps distinct counting', () => {
     const many = [['id'], ...Array.from({ length: 30 }, (_, i) => [String(i)])];
-    const c = profileRows('x.csv', many, { distinctCap: 10, hashCap: 5 }).columns[0]!;
+    const c = profileRows('x.csv', many, { distinctCap: 10, hashCap: 5 }).columns[0];
     expect(c).toMatchObject({ distinctCount: 10, distinctCapped: true });
-    expect(c.valueHashes).toHaveLength(5);
+    expect(c?.valueHashes).toHaveLength(5);
   });
 
   it('warns about rows longer than the header', () => {
