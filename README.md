@@ -110,6 +110,16 @@ Reload the page to see UI changes. Restart the tunnel after editing `manifest.ym
 5. Click **Approve & publish**. Each page reports `created`, `updated`, `skipped` or `failed`, and every run is kept in **Run history**.
 6. Under **Plan the delivery in Jira**, pick a project, preview, and approve. SpecSmith creates an Epic and seven stories from `config/story-templates.json`, with BDD acceptance criteria, story points, "Blocks" dependencies and links to the spec. The spec's parent page links back to the Epic.
 
+Every publish also attaches an **export pack** to the spec's parent page. An attachment is only re-uploaded when its content changed.
+
+| File | Contents |
+|---|---|
+| `ddl.sql` | ANSI SQL `CREATE` statements for the raw, curated and analytics zones. The analytics views leave out PII/PCI columns until a masking policy is approved. |
+| `schema.yml` | dbt models with descriptions and `not_null`, `unique` and `accepted_values` tests |
+| `data-contract.yaml` | A data contract in the Open Data Contract Standard (v3) layout, with classifications |
+| `feed.schema.json` | A JSON Schema (draft 2020-12) for each file |
+| `checks.sql` | One query per data check; an empty result means the check passed |
+
 SpecSmith owns only the summary and description of the issues it creates. Status, assignee, estimates and comments can be changed freely in Jira. If someone edits a summary or description in Jira, SpecSmith reports that issue as `failed` and leaves it alone.
 
 Publishing again with no changes skips every page. If someone edits a generated page directly in Confluence, SpecSmith refuses to overwrite it and tells you which page changed.
@@ -200,7 +210,8 @@ Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith c
 - [x] Intake UI: upload, profiling in a web worker, spec grid with source badges and inline editing
 - [x] Spec editor and Confluence publishing with dry run (idempotent, fails closed on outside edits, run history)
 - [x] Gatekeeper, Jira story planner and run history
-- [ ] Relationship detection, ER diagram and export pack
+- [x] Export pack: DDL, dbt `schema.yml`, data contract, JSON Schema, SQL checks (attached to the spec, golden-file tested)
+- [ ] Relationship detection and ER diagram
 - [ ] Rovo agent crew, guardrails and the suggestion review panel
 - [ ] Test design and traceability
 - [ ] Review and sign-off workflow

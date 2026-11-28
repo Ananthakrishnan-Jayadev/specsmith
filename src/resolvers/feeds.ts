@@ -12,6 +12,7 @@ import { confluencePort } from '../platform/confluence';
 import { jiraPort } from '../platform/jira';
 import { planStories } from '../gatekeeper/stories';
 import { defaultConfig } from '../config';
+import { exportPack } from '../exporters';
 import { sanitizeForUpload } from '../spec/sanitize';
 
 const repo = () => new FeedRepo(forgeKV);
@@ -65,6 +66,7 @@ export async function publishFeed(
     confluencePort(ctx.siteUrl),
     {
       feedId: meta.feedId, feedName: meta.name, files, spaceKey: p.spaceKey, links: meta.confluence,
+      exports: exportPack(meta.feedId, meta.name, files),
       ...(meta.jira?.epic ? { delivery: { epicKey: meta.jira.epic.key, ...(meta.jira.epic.url ? { epicUrl: meta.jira.epic.url } : {}) } } : {}),
     },
     { dryRun: p.dryRun },

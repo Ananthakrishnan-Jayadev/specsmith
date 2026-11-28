@@ -4,7 +4,7 @@
  */
 import type { ColumnSpec, FieldValue, FileSpec } from '../domain/spec';
 import { formatType, specStats } from '../spec/edit';
-import { COLOURS, bulletList, childrenMacro, externalLink, heading, infoPanel, paragraph, table, type Cell } from './storage';
+import { COLOURS, attachmentLink, bulletList, childrenMacro, escapeXml, externalLink, heading, infoPanel, paragraph, table, type Cell } from './storage';
 
 export const parentTitle = (feedName: string) => `${feedName}: Feed Spec`;
 export const fileTitle = (feedName: string, spec: FileSpec) => `${feedName}: ${spec.tableName.value}`;
@@ -44,7 +44,12 @@ export interface Delivery {
   epicUrl?: string;
 }
 
-export function renderParentPage(feedName: string, files: FileSpec[], delivery?: Delivery): string {
+export interface ExportRef {
+  name: string;
+  description: string;
+}
+
+export function renderParentPage(feedName: string, files: FileSpec[], delivery?: Delivery, exports: ExportRef[] = []): string {
   const sorted = [...files].sort((a, b) => a.fileName.localeCompare(b.fileName));
   const rows = sorted.map((f): Cell[] => {
     const st = specStats(f);
@@ -66,6 +71,10 @@ export function renderParentPage(feedName: string, files: FileSpec[], delivery?:
     table(['File', 'Table', 'Rows', 'Columns', 'TBD fields', 'PII columns', 'PCI columns', 'Lint errors'], rows),
     ...(delivery
       ? [heading(2, 'Delivery'), `<p>Jira epic: ${delivery.epicUrl ? externalLink(delivery.epicKey, delivery.epicUrl) : delivery.epicKey}</p>`]
+      : []),
+    ...(exports.length
+      ? [heading(2, 'Exports'), paragraph('Generated from this spec and attached to this page. They update automatically when the spec changes.'),
+         `<ul>${exports.map((e) => `<li>${attachmentLink(e.name)}: ${escapeXml(e.description)}</li>`).join('')}</ul>`]
       : []),
     heading(2, 'File specs'),
     childrenMacro(),

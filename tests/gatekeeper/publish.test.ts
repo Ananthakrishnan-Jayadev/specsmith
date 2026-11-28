@@ -113,3 +113,46 @@ describe('publishSpecPages', () => {
     expect(statuses(r.rows)).toEqual(['skipped', 'skipped', 'created']);
   });
 });
+
+describe('export attachments', () => {
+  const withExports = (links?: ConfluenceLinks, files = [file('a.csv'), file('b.csv')]): PublishInput => ({
+    ...input(links, files),
+    exports: [
+      { name: 'ddl.sql', contentType: 'text/plain', description: 'DDL', content: `ddl for ${files.length}` },
+      { name: 'checks.sql', contentType: 'text/plain', description: 'Checks', content: 'checks' },
+    ],
+  });
+
+  it('plans, uploads to the parent, then skips unchanged and updates changed files', async () => {
+    const c = new FakeConfluence();
+    const dry = await publishSpecPages(c, withExports(), { dryRun: true });
+    expect(dry.rows.slice(-2).map((r) => [r.target, r.action, r.status])).toEqual([
+      ['Attachment: ddl.sql', 'create', 'dry-run'],
+      ['Attachment: checks.sql', 'create', 'dry-run'],
+    ]);
+    const first = await publishSpecPages(c, withExports(), { dryRun: false });
+    const parentId = first.links?.parent?.pageId;
+    expect(c.attachments.has(`${parentId}/ddl.sql`)).toBe(true);
+    expect(c.pages.get(parentId ?? '')?.body).toContain('ri:filename="ddl.sql"');
+
+    const again = await publishSpecPages(c, withExports(first.links ?? undefined), { dryRun: false });
+    expect(again.rows.slice(-2).map((r) => r.status)).toEqual(['skipped', 'skipped']);
+
+    const changed = await publishSpecPages(c, withExports(again.links ?? undefined, [file('a.csv')]), { dryRun: false });
+    expect(changed.rows.find((r) => r.target === 'Attachment: ddl.sql')?.status).toBe('updated');
+    expect(changed.rows.find((r) => r.target === 'Attachment: checks.sql')?.status).toBe('skipped');
+  });
+
+  it('fails attachments closed when the parent page cannot be published, and tolerates upload errors', async () => {
+    const c = new FakeConfluence();
+    c.failCreateFor.add('Retail: Feed Spec');
+    const r = await publishSpecPages(c, withExports(), { dryRun: false });
+    expect(r.rows.slice(-2).every((x) => x.status === 'failed' && /parent page is not available/.test(x.message))).toBe(true);
+
+    const c2 = new FakeConfluence();
+    c2.failUploads = true;
+    const r2 = await publishSpecPages(c2, withExports(), { dryRun: false });
+    expect(r2.rows.slice(0, 3).every((x) => x.status === 'created')).toBe(true);
+    expect(r2.rows.slice(-2).every((x) => x.status === 'failed')).toBe(true);
+  });
+});

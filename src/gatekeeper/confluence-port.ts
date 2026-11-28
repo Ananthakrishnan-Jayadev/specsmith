@@ -27,6 +27,8 @@ export interface ConfluencePort {
   /** Throws VersionConflictError when `version` is stale. */
   updatePage(input: { id: string; title: string; body: string; version: number }): Promise<WrittenPage>;
   setOwner(pageId: string, owner: PageOwner): Promise<void>;
+  /** Create-or-update by file name (PUT child/attachment, spike S6). */
+  uploadAttachment(pageId: string, file: { name: string; contentType: string; content: string }): Promise<{ id: string }>;
 }
 
 export class VersionConflictError extends Error {}

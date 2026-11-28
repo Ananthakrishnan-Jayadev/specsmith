@@ -16,6 +16,8 @@ export interface ConfluenceLinks {
   parent?: PageLink;
   /** Keyed by file name. */
   pages: Record<string, PageLink>;
+  /** Export attachments on the parent page, keyed by file name. */
+  attachments?: Record<string, { id: string; sha256: string }>;
 }
 
 export interface IssueRef {

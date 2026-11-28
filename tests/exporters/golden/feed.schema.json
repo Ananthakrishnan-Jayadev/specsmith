@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Retail Accounts feed records",
+  "$defs": {
+    "accounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "customer_id": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "account_type_code": {
+          "type": "string",
+          "maxLength": 5
+        },
+        "open_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "close_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "status_code": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "branch_number": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "currency_code": {
+          "type": "string",
+          "maxLength": 5
+        },
+        "credit_limit_amount": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "current_balance_amount": {
+          "type": "number"
+        },
+        "interest_rate": {
+          "type": "number"
+        },
+        "overdraft_flag": {
+          "type": "boolean"
+        },
+        "last_statement_date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "account_id",
+        "customer_id",
+        "account_type_code",
+        "open_date",
+        "status_code",
+        "branch_number",
+        "currency_code",
+        "current_balance_amount",
+        "interest_rate",
+        "overdraft_flag",
+        "last_statement_date"
+      ]
+    },
+    "cards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "account_id": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "card_number": {
+          "type": "string",
+          "maxLength": 30,
+          "x-classification": "PCI"
+        },
+        "cardholder_name": {
+          "type": "string",
+          "maxLength": 30,
+          "x-classification": "PCI"
+        },
+        "expiry_mm_yy": {
+          "type": "string",
+          "maxLength": 10,
+          "x-classification": "PCI"
+        },
+        "cvv": {
+          "type": "string",
+          "maxLength": 5,
+          "x-classification": "PCI"
+        },
+        "card_status": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "issue_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "contactless_indicator": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "card_id",
+        "account_id",
+        "card_number",
+        "cardholder_name",
+        "expiry_mm_yy",
+        "cvv",
+        "card_status",
+        "issue_date",
+        "contactless_indicator"
+      ]
+    },
+    "customers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "first_name": {
+          "type": "string",
+          "maxLength": 10,
+          "x-classification": "PII"
+        },
+        "last_name": {
+          "type": "string",
+          "maxLength": 20,
+          "x-classification": "PII"
+        },
+        "c_email": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 50,
+          "x-classification": "PII"
+        },
+        "phone_number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 30,
+          "x-classification": "PII"
+        },
+        "dob": {
+          "type": "string",
+          "format": "date",
+          "x-classification": "PII"
+        },
+        "c_sin": {
+          "type": "string",
+          "maxLength": 20,
+          "x-classification": "PII"
+        },
+        "address_line1": {
+          "type": "string",
+          "maxLength": 30,
+          "x-classification": "PII"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "province_code": {
+          "type": "string",
+          "maxLength": 3
+        },
+        "postal_code": {
+          "type": "string",
+          "maxLength": 20,
+          "x-classification": "PII"
+        },
+        "customer_since_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "segment_code": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "kyc_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 20
+        },
+        "flag_x": {
+          "type": "boolean"
+        },
+        "col_17": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 10
+        },
+        "marketing_opt_in": {
+          "type": "boolean"
+        },
+        "created_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "customer_id",
+        "first_name",
+        "last_name",
+        "dob",
+        "c_sin",
+        "address_line1",
+        "city",
+        "province_code",
+        "postal_code",
+        "customer_since_date",
+        "segment_code",
+        "flag_x",
+        "marketing_opt_in",
+        "created_timestamp"
+      ]
+    },
+    "transactions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "transaction_id": {
+          "type": "integer"
+        },
+        "account_id": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "transaction_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "posting_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "transaction_amount": {
+          "type": "number"
+        },
+        "transaction_type_code": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "channel_code": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "merchant_name": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "merchant_category_code": {
+          "type": "integer"
+        },
+        "description_text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "ip_address": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 30,
+          "x-classification": "PII"
+        },
+        "device_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100,
+          "x-classification": "PII"
+        },
+        "reversal_flag": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "account_id",
+        "transaction_timestamp",
+        "posting_date",
+        "transaction_amount",
+        "transaction_type_code",
+        "channel_code",
+        "merchant_name",
+        "merchant_category_code",
+        "reversal_flag"
+      ]
+    }
+  }
+}

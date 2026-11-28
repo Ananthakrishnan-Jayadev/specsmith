@@ -68,3 +68,8 @@ export function bulletList(items: string[]): string {
 export function externalLink(label: string, url: string): string {
   return /^https?:\/\//.test(url) ? `<a href="${escapeXml(url)}">${escapeXml(label)}</a>` : escapeXml(label);
 }
+
+/** Link to a file attached to the same page. */
+export function attachmentLink(filename: string): string {
+  return `<ac:link><ri:attachment ri:filename="${escapeXml(filename)}" /></ac:link>`;
+}

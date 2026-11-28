@@ -48,6 +48,16 @@ export class FakeConfluence implements ConfluencePort {
     const p = this.pages.get(pageId);
     if (p) p.owner = owner;
   }
+  attachments = new Map<string, { id: string; content: string }>(); // key: pageId/name
+  failUploads = false;
+  async uploadAttachment(pageId: string, file: { name: string; content: string }) {
+    if (this.failUploads) throw new Error('HTTP 500: upload failed');
+    this.writes++;
+    const key = `${pageId}/${file.name}`;
+    const id = this.attachments.get(key)?.id ?? `att${this.next++}`;
+    this.attachments.set(key, { id, content: file.content });
+    return { id };
+  }
   /** Simulates a person editing a page in Confluence. */
   humanEdit(id: string) {
     const p = this.pages.get(id);

@@ -2,6 +2,8 @@
 import { route } from '@forge/api';
 import { VersionConflictError, type ConfluencePort, type PageInfo, type PageOwner, type WrittenPage } from '../gatekeeper/confluence-port';
 import { callProduct, describeError } from './product-api';
+import { buildMultipart } from './multipart';
+import { XSRF_HEADER } from '../gatekeeper/attachment-plan';
 
 interface V2Page { id: string; title: string; status?: string; version?: { number: number }; _links?: { webui?: string } }
 interface Paged<T> { results: T[] }
@@ -79,6 +81,18 @@ export function confluencePort(siteUrl: string | null): ConfluencePort {
           })
         : await callProduct('confluence', route`/wiki/api/v2/pages/${pageId}/properties`, { method: 'POST', json: { key: OWNER_KEY, value: owner } });
       if (!r.ok) throw new Error(describeError(r));
+    },
+
+    async uploadAttachment(pageId, file) {
+      const mp = buildMultipart([{ field: 'file', filename: file.name, contentType: file.contentType, content: file.content }], { minorEdit: 'true' });
+      const r = await callProduct<{ results?: { id: string }[] }>('confluence', route`/wiki/rest/api/content/${pageId}/child/attachment`, {
+        method: 'PUT',
+        rawBody: mp.body,
+        headers: { 'Content-Type': mp.contentType, ...XSRF_HEADER },
+      });
+      const id = r.data?.results?.[0]?.id;
+      if (!r.ok || !id) throw new Error(describeError(r));
+      return { id };
     },
   };
 }

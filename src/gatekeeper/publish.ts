@@ -18,6 +18,8 @@ import type { ConfluenceLinks, PageLink, RunRow } from '../domain/feed';
 import type { FileSpec } from '../domain/spec';
 import { fileTitle, parentTitle, renderFilePage, renderParentPage, type Delivery } from '../render/spec-page';
 import { VersionConflictError, type ConfluencePort, type PageInfo } from './confluence-port';
+import { planAttachment } from './attachment-plan';
+import type { ExportFile } from '../exporters';
 
 export const PARENT = '__parent__';
 
@@ -29,6 +31,8 @@ export interface PublishInput {
   links: ConfluenceLinks | undefined;
   /** Jira epic to link from the parent page, once stories exist. */
   delivery?: Delivery;
+  /** Files attached to the parent page (export pack). */
+  exports?: ExportFile[];
 }
 
 interface Target {
@@ -54,7 +58,7 @@ export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex'
 function targetsFor(input: PublishInput): Target[] {
   const mk = (key: string, title: string, body: string): Target => ({ key, title, body, bodyHash: sha256(body) });
   return [
-    mk(PARENT, parentTitle(input.feedName), renderParentPage(input.feedName, input.files, input.delivery)),
+    mk(PARENT, parentTitle(input.feedName), renderParentPage(input.feedName, input.files, input.delivery, (input.exports ?? []).map(({ name, description }) => ({ name, description })))),
     ...[...input.files].sort((a, b) => a.fileName.localeCompare(b.fileName)).map((f) => mk(f.fileName, fileTitle(input.feedName, f), renderFilePage(input.feedName, f))),
   ];
 }
@@ -101,9 +105,16 @@ function planRow(t: Target, d: Decision, dryRun: boolean): RunRow {
 
 export async function publishSpecPages(port: ConfluencePort, input: PublishInput, opts: { dryRun: boolean }): Promise<PublishResult> {
   const targets = targetsFor(input);
+  const exportsList = input.exports ?? [];
+  const attachTarget = (name: string) => `Attachment: ${name}`;
   const failAll = (reason: string): PublishResult => ({
-    rows: targets.map((t) => ({ target: t.title, action: 'none', status: 'failed', message: reason })),
+    rows: [...targets.map((t) => t.title), ...exportsList.map((e) => attachTarget(e.name))].map((target) => ({ target, action: 'none', status: 'failed', message: reason })),
     links: null,
+  });
+  const attachPlans = exportsList.map((e) => {
+    const sha = sha256(e.content);
+    const recorded = input.links?.attachments?.[e.name];
+    return { file: e, sha, recorded, plan: planAttachment(recorded, sha) };
   });
 
   if (input.links && input.links.spaceKey !== input.spaceKey) {
@@ -129,10 +140,22 @@ export async function publishSpecPages(port: ConfluencePort, input: PublishInput
   }
 
   if (opts.dryRun) {
-    return { rows: targets.map((t, i) => planRow(t, decisions[i] as Decision, true)), links: null };
+    const parentOk = (decisions[0] as Decision).action !== 'fail';
+    const attachRows: RunRow[] = attachPlans.map((a) =>
+      !parentOk
+        ? { target: attachTarget(a.file.name), action: 'none', status: 'failed', message: 'The parent page has a problem, so its attachments cannot be published.' }
+        : a.plan.op === 'skip'
+          ? { target: attachTarget(a.file.name), action: 'skip', status: 'skipped', message: 'Unchanged.' }
+          : { target: attachTarget(a.file.name), action: a.recorded ? 'update' : 'create', status: 'dry-run', message: a.file.description },
+    );
+    return { rows: [...targets.map((t, i) => planRow(t, decisions[i] as Decision, true)), ...attachRows], links: null };
   }
 
-  const links: ConfluenceLinks = { spaceKey: space.key, spaceId, pages: { ...(input.links?.pages ?? {}) }, ...(input.links?.parent ? { parent: input.links.parent } : {}) };
+  const links: ConfluenceLinks = {
+    spaceKey: space.key, spaceId, pages: { ...(input.links?.pages ?? {}) },
+    ...(input.links?.parent ? { parent: input.links.parent } : {}),
+    attachments: { ...(input.links?.attachments ?? {}) },
+  };
   const rows: RunRow[] = [];
   let parentId: string | undefined;
 
@@ -175,6 +198,25 @@ export async function publishSpecPages(port: ConfluencePort, input: PublishInput
       const reason = e instanceof VersionConflictError ? `"${t.title}" changed while publishing. Publish again to re-check it.` : errText(e);
       rows.push({ target: t.title, action: 'none', status: 'failed', message: reason });
       if (isParent && d.action === 'update') parentId = d.page.id; // existing parent still usable
+    }
+  }
+  // Export attachments on the parent page (after the page exists).
+  for (const a of attachPlans) {
+    const target = attachTarget(a.file.name);
+    if (!parentId) {
+      rows.push({ target, action: 'none', status: 'failed', message: 'The parent page is not available, so its attachments cannot be published.' });
+      continue;
+    }
+    if (a.plan.op === 'skip') {
+      rows.push({ target, action: 'skip', status: 'skipped', message: 'Unchanged.' });
+      continue;
+    }
+    try {
+      const { id } = await port.uploadAttachment(parentId, { name: a.file.name, contentType: a.file.contentType, content: a.file.content });
+      (links.attachments ??= {})[a.file.name] = { id, sha256: a.sha };
+      rows.push({ target, action: a.recorded ? 'update' : 'create', status: a.recorded ? 'updated' : 'created', message: a.file.description, id });
+    } catch (e) {
+      rows.push({ target, action: 'none', status: 'failed', message: errText(e) });
     }
   }
   return { rows, links };
