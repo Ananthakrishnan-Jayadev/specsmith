@@ -63,6 +63,7 @@ export type SpecSmithApi = {
   saveFeed: (p: { feedId: string | null; name: string; fileNames: string[] }) => FeedMeta;
   saveFile: (p: { feedId: string; spec: FileSpec }) => { ok: true };
   publishFeed: (p: { feedId: string; spaceKey: string; dryRun: boolean }) => RunRecord;
+  planFeedStories: (p: { feedId: string; projectKey: string; dryRun: boolean }) => RunRecord;
   listRuns: (p: { feedId: string }) => RunRecord[];
   listTargets: () => Targets;
   spikeConfluence: (p: { spaceKey: string; dryRun: boolean }) => SpikeReport;

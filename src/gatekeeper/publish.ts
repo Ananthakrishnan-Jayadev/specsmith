@@ -16,7 +16,7 @@
 import { createHash } from 'node:crypto';
 import type { ConfluenceLinks, PageLink, RunRow } from '../domain/feed';
 import type { FileSpec } from '../domain/spec';
-import { fileTitle, parentTitle, renderFilePage, renderParentPage } from '../render/spec-page';
+import { fileTitle, parentTitle, renderFilePage, renderParentPage, type Delivery } from '../render/spec-page';
 import { VersionConflictError, type ConfluencePort, type PageInfo } from './confluence-port';
 
 export const PARENT = '__parent__';
@@ -27,6 +27,8 @@ export interface PublishInput {
   files: FileSpec[];
   spaceKey: string;
   links: ConfluenceLinks | undefined;
+  /** Jira epic to link from the parent page, once stories exist. */
+  delivery?: Delivery;
 }
 
 interface Target {
@@ -52,7 +54,7 @@ export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex'
 function targetsFor(input: PublishInput): Target[] {
   const mk = (key: string, title: string, body: string): Target => ({ key, title, body, bodyHash: sha256(body) });
   return [
-    mk(PARENT, parentTitle(input.feedName), renderParentPage(input.feedName, input.files)),
+    mk(PARENT, parentTitle(input.feedName), renderParentPage(input.feedName, input.files, input.delivery)),
     ...[...input.files].sort((a, b) => a.fileName.localeCompare(b.fileName)).map((f) => mk(f.fileName, fileTitle(input.feedName, f), renderFilePage(input.feedName, f))),
   ];
 }

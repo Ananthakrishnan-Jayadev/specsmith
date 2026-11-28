@@ -1,0 +1,96 @@
+{
+  "$comment": "Story Planner templates. Placeholders: {feedName} {fileCount} {tables} {columnCount} {rowCount} {piiCount} {pciCount} {tbdCount}. 'blockedBy' lists template keys that must finish first (creates Jira 'Blocks' links).",
+  "issueTypes": {
+    "epic": ["Epic"],
+    "story": ["Story", "Task"]
+  },
+  "storyPointFields": ["Story point estimate", "Story Points"],
+  "labels": ["specsmith"],
+  "epic": {
+    "key": "epic",
+    "summary": "{feedName}: data feed onboarding",
+    "context": "Onboard the {feedName} feed: {fileCount} file(s) ({tables}), {columnCount} columns, {rowCount} rows profiled. {piiCount} PII and {pciCount} PCI columns identified; {tbdCount} spec fields still need a decision.",
+    "acceptanceCriteria": [
+      "Given the feed spec, when every child story is done, then the feed is live in the analytics zone",
+      "Given the spec pages, when a reviewer opens them, then no field is left TBD"
+    ]
+  },
+  "stories": [
+    {
+      "key": "requirements-signoff",
+      "summary": "{feedName}: requirements sign-off",
+      "points": 2,
+      "blockedBy": [],
+      "context": "Data owners review the column spec for {tables} and resolve the {tbdCount} open fields.",
+      "acceptanceCriteria": [
+        "Given the published spec, when the data owner reviews each file, then every file is marked approved",
+        "Given a PII or PCI column, when it is reviewed, then its classification and masking are confirmed"
+      ]
+    },
+    {
+      "key": "build-raw-curated",
+      "summary": "{feedName}: build raw to curated load",
+      "points": 8,
+      "blockedBy": ["requirements-signoff"],
+      "context": "Load {fileCount} file(s) into the raw zone and transform them into curated tables using the target names and types from the spec.",
+      "acceptanceCriteria": [
+        "Given a feed delivery, when the load runs, then every source column lands in its target column with the specified type",
+        "Given a row that breaks a type or nullability rule, when the load runs, then it is rejected and logged, not silently changed"
+      ]
+    },
+    {
+      "key": "build-curated-analytics",
+      "summary": "{feedName}: build curated to analytics model",
+      "points": 5,
+      "blockedBy": ["build-raw-curated"],
+      "context": "Publish analytics-ready tables for {tables} with masking applied to the {piiCount} PII and {pciCount} PCI columns.",
+      "acceptanceCriteria": [
+        "Given an analytics user, when they query the tables, then sensitive columns are masked as specified",
+        "Given the curated tables, when the model refreshes, then row counts reconcile with the curated zone"
+      ]
+    },
+    {
+      "key": "test-design",
+      "summary": "{feedName}: test design",
+      "points": 3,
+      "blockedBy": ["requirements-signoff"],
+      "context": "Design data checks for {columnCount} columns: existence, type, length, nullability, keys, relationships and masking.",
+      "acceptanceCriteria": [
+        "Given the approved spec, when test design is done, then every column has at least one check",
+        "Given each check, when it is reviewed, then its expected result quotes the spec exactly"
+      ]
+    },
+    {
+      "key": "test-execution",
+      "summary": "{feedName}: test execution",
+      "points": 5,
+      "blockedBy": ["build-curated-analytics", "test-design"],
+      "context": "Run the designed checks against the curated and analytics tables and record results.",
+      "acceptanceCriteria": [
+        "Given the test plan, when it is executed, then every check has a pass or fail result",
+        "Given a failed check, when it is triaged, then a defect is linked to this story"
+      ]
+    },
+    {
+      "key": "business-acceptance",
+      "summary": "{feedName}: business acceptance",
+      "points": 2,
+      "blockedBy": ["test-execution"],
+      "context": "Business users confirm the {feedName} data meets their needs.",
+      "acceptanceCriteria": [
+        "Given the analytics tables, when business users validate sample reports, then they sign off in this story"
+      ]
+    },
+    {
+      "key": "production-release",
+      "summary": "{feedName}: production release",
+      "points": 3,
+      "blockedBy": ["business-acceptance"],
+      "context": "Promote the {feedName} pipelines and tables to production and hand over to operations.",
+      "acceptanceCriteria": [
+        "Given business sign-off, when the release runs, then the first production load completes and reconciles",
+        "Given operations, when they receive the hand-over, then the run book links to the spec pages"
+      ]
+    }
+  ]
+}

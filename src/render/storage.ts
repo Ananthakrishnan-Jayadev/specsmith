@@ -63,3 +63,8 @@ export function childrenMacro(): string {
 export function bulletList(items: string[]): string {
   return `<ul>${items.map((i) => `<li>${escapeXml(i)}</li>`).join('')}</ul>`;
 }
+
+/** External link. Only http(s) URLs are allowed; anything else renders as text. */
+export function externalLink(label: string, url: string): string {
+  return /^https?:\/\//.test(url) ? `<a href="${escapeXml(url)}">${escapeXml(label)}</a>` : escapeXml(label);
+}

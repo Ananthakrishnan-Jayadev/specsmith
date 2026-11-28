@@ -9,6 +9,9 @@ import { FeedRepo, newFeedId } from '../storage/feeds';
 import { forgeKV, listByPrefix } from '../storage/forge-kv';
 import { publishSpecPages } from '../gatekeeper/publish';
 import { confluencePort } from '../platform/confluence';
+import { jiraPort } from '../platform/jira';
+import { planStories } from '../gatekeeper/stories';
+import { defaultConfig } from '../config';
 import { sanitizeForUpload } from '../spec/sanitize';
 
 const repo = () => new FeedRepo(forgeKV);
@@ -60,14 +63,57 @@ export async function publishFeed(
   const startedAt = now();
   const result = await publishSpecPages(
     confluencePort(ctx.siteUrl),
-    { feedId: meta.feedId, feedName: meta.name, files, spaceKey: p.spaceKey, links: meta.confluence },
+    {
+      feedId: meta.feedId, feedName: meta.name, files, spaceKey: p.spaceKey, links: meta.confluence,
+      ...(meta.jira?.epic ? { delivery: { epicKey: meta.jira.epic.key, ...(meta.jira.epic.url ? { epicUrl: meta.jira.epic.url } : {}) } } : {}),
+    },
     { dryRun: p.dryRun },
   );
-  if (!p.dryRun && result.links) await r.put({ ...meta, confluence: result.links, updatedAt: now() });
+  if (!p.dryRun && result.links) {
+    const latest = (await r.get(meta.feedId)) ?? meta;
+    await r.put({ ...latest, confluence: result.links, updatedAt: now() });
+  }
   const run: RunRecord = {
     runId: `${meta.feedId}-${Date.parse(startedAt).toString(36)}`,
     feedId: meta.feedId,
     kind: 'publish-confluence',
+    dryRun: p.dryRun,
+    actor: ctx.accountId,
+    startedAt,
+    finishedAt: now(),
+    rows: result.rows,
+    counts: countRows(result.rows),
+  };
+  await r.addRun(run);
+  return run;
+}
+
+export async function planFeedStories(
+  p: { feedId: string; projectKey: string; dryRun: boolean },
+  ctx: { accountId: string | null; siteUrl: string | null },
+): Promise<RunRecord> {
+  const r = repo();
+  const meta = await r.get(p.feedId);
+  if (!meta) throw new Error(`Feed ${p.feedId} not found.`);
+  const files = await r.getFiles(meta);
+  const startedAt = now();
+  const result = await planStories(
+    jiraPort(ctx.siteUrl),
+    {
+      feedId: meta.feedId, feedName: meta.name, files, projectKey: p.projectKey, templates: defaultConfig.stories,
+      links: meta.jira, specUrl: meta.confluence?.parent?.url ?? null,
+    },
+    { dryRun: p.dryRun },
+  );
+  // Re-read before writing so a concurrent Confluence publish's links are kept.
+  if (!p.dryRun && result.links) {
+    const latest = (await r.get(meta.feedId)) ?? meta;
+    await r.put({ ...latest, jira: result.links, updatedAt: now() });
+  }
+  const run: RunRecord = {
+    runId: `${meta.feedId}-s${Date.parse(startedAt).toString(36)}`,
+    feedId: meta.feedId,
+    kind: 'plan-stories',
     dryRun: p.dryRun,
     actor: ctx.accountId,
     startedAt,

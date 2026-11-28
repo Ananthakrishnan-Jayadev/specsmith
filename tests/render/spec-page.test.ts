@@ -39,3 +39,10 @@ describe('renderParentPage', () => {
     expect(fileTitle('Retail', spec())).toBe('Retail: customers');
   });
 });
+
+describe('delivery link', () => {
+  it('links the epic from the parent page, and only http(s) URLs', () => {
+    expect(renderParentPage('Retail', [spec()], { epicKey: 'SSD-1', epicUrl: 'https://x/browse/SSD-1' })).toContain('<a href="https://x/browse/SSD-1">SSD-1</a>');
+    expect(renderParentPage('Retail', [spec()], { epicKey: 'SSD-1', epicUrl: 'javascript:alert(1)' })).not.toContain('javascript:');
+  });
+});

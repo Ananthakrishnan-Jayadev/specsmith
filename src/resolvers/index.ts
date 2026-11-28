@@ -6,7 +6,7 @@ import { spikeConfluence } from '../spikes/confluence';
 import { spikeJira } from '../spikes/jira';
 import { spikeStorage } from '../spikes/storage';
 import { queueStatus, startQueueSpike } from '../spikes/queue';
-import { getFeed, listFeeds, listRuns, publishFeed, saveFeed, saveFile } from './feeds';
+import { getFeed, listFeeds, listRuns, planFeedStories, publishFeed, saveFeed, saveFile } from './feeds';
 
 const accountOf = (context: Record<string, unknown>): string | null =>
   typeof context['accountId'] === 'string' ? context['accountId'] : null;
@@ -27,6 +27,7 @@ export const handler = makeResolver<SpecSmithApi>({
   saveFeed: ({ payload }) => saveFeed(payload),
   saveFile: ({ payload }) => saveFile(payload),
   publishFeed: ({ payload, context }) => publishFeed(payload, { accountId: accountOf(context), siteUrl: siteUrlOf(context) }),
+  planFeedStories: ({ payload, context }) => planFeedStories(payload, { accountId: accountOf(context), siteUrl: siteUrlOf(context) }),
   listRuns: ({ payload }) => listRuns(payload),
   spikeConfluence: ({ payload, context }) => spikeConfluence(payload.spaceKey, payload.dryRun, siteUrlOf(context)),
   spikeJira: ({ payload, context }) => spikeJira(payload.projectKey, payload.dryRun, payload.pageUrl, siteUrlOf(context)),

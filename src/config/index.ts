@@ -6,6 +6,7 @@ import typesJson from '../../config/types.json';
 import namingJson from '../../config/naming.json';
 import piiJson from '../../config/pii.json';
 import lintJson from '../../config/lint.json';
+import storyJson from '../../config/story-templates.json';
 import type { PiiClass, Severity } from '../domain/spec';
 import type { ValueSignals } from '../domain/profile';
 
@@ -49,16 +50,35 @@ export interface LintConfig {
   rules: Record<LintRuleId, Severity | 'off'>;
 }
 
+export interface StoryTemplate {
+  key: string;
+  summary: string;
+  context: string;
+  acceptanceCriteria: string[];
+  points?: number;
+  blockedBy?: string[];
+}
+
+export interface StoryTemplatesConfig {
+  issueTypes: { epic: string[]; story: string[] };
+  storyPointFields: string[];
+  labels: string[];
+  epic: StoryTemplate;
+  stories: StoryTemplate[];
+}
+
 export interface RulesConfig {
   types: TypesConfig;
   naming: NamingConfig;
   pii: PiiConfig;
   lint: LintConfig;
+  stories: StoryTemplatesConfig;
 }
 
 const types: TypesConfig = typesJson;
 const naming: NamingConfig = namingJson;
 const pii: PiiConfig = piiJson as PiiConfig; // JSON infers strings; narrowed + validated in tests
 const lint: LintConfig = lintJson as LintConfig;
+const stories: StoryTemplatesConfig = storyJson;
 
-export const defaultConfig: RulesConfig = { types, naming, pii, lint };
+export const defaultConfig: RulesConfig = { types, naming, pii, lint, stories };

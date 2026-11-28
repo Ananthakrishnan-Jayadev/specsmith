@@ -9,6 +9,8 @@ import { api, type FeedMeta } from './api';
 import { runProfile, type ProfileMode } from './profiling/runProfile';
 import { SpecGrid } from './spec/SpecGrid';
 import { PublishPanel } from './PublishPanel';
+import { StoriesPanel } from './StoriesPanel';
+import { RunHistory } from './RunHistory';
 
 /** Frontend invoke payload limit is 500 KB (Forge docs); keep headroom. */
 const MAX_SPEC_CHARS = 450_000;
@@ -30,6 +32,7 @@ export function Workspace() {
   const [specs, setSpecsRaw] = useState<FileSpec[]>([]);
   const [revision, setRevision] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [runsVersion, setRunsVersion] = useState(0);
 
   /** Every spec change bumps the revision, which invalidates an earlier preview. */
   const setSpecs = useCallback((fn: (ss: FileSpec[]) => FileSpec[]) => {
@@ -53,6 +56,17 @@ export function Workspace() {
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  /** After a run, reload feed metadata (published links, locked space/project). */
+  const afterRun = () => {
+    setRunsVersion((v) => v + 1);
+    api('listFeeds')
+      .then((all) => {
+        setSavedFeeds(all);
+        setFeed((f) => (f ? (all.find((x) => x.feedId === f.feedId) ?? f) : f));
+      })
+      .catch(() => undefined);
   };
 
   const save = async (): Promise<FeedMeta> => {
@@ -168,7 +182,9 @@ export function Workspace() {
             })}
           </div>
           <SpecGrid spec={current} onChange={(next) => setSpecs((ss) => ss.map((s) => (s.fileName === next.fileName ? next : s)))} />
-          <PublishPanel feed={feed} revision={revision} save={save} />
+          <PublishPanel feed={feed} revision={revision} save={save} onRun={afterRun} />
+          <StoriesPanel feed={feed} revision={revision} save={save} onRun={afterRun} />
+          <RunHistory feedId={feed?.feedId ?? null} version={runsVersion} />
         </>
       )}
     </section>

@@ -108,6 +108,9 @@ Reload the page to see UI changes. Restart the tunnel after editing `manifest.ym
 3. Review the spec. Yellow cells need a decision; hover a badge to see why a value was chosen; click a cell to edit it.
 4. Pick a space and click **Preview (dry run)** to see exactly which pages would be created, updated or skipped, and why.
 5. Click **Approve & publish**. Each page reports `created`, `updated`, `skipped` or `failed`, and every run is kept in **Run history**.
+6. Under **Plan the delivery in Jira**, pick a project, preview, and approve. SpecSmith creates an Epic and seven stories from `config/story-templates.json`, with BDD acceptance criteria, story points, "Blocks" dependencies and links to the spec. The spec's parent page links back to the Epic.
+
+SpecSmith owns only the summary and description of the issues it creates. Status, assignee, estimates and comments can be changed freely in Jira. If someone edits a summary or description in Jira, SpecSmith reports that issue as `failed` and leaves it alone.
 
 Publishing again with no changes skips every page. If someone edits a generated page directly in Confluence, SpecSmith refuses to overwrite it and tells you which page changed.
 
@@ -140,6 +143,7 @@ All deterministic rules read their settings from `config/`:
 | `naming.json` | snake_case target names, abbreviation expansion, reserved words, "unclear name" patterns |
 | `pii.json` | PII and PCI categories: name keywords plus content signals (email shape, Luhn-valid numbers, IPs, phone and postal shapes) |
 | `lint.json` | the severity of each spec check, or `off` |
+| `story-templates.json` | the Epic and story templates (placeholders like `{feedName}` and `{tbdCount}`), issue-type names, story-point field names, and dependencies |
 
 Every derived value records its **evidence**, for example *"rule card_number: name contains "card_no"; 100.0% of values match luhnCard pattern"*. Rules never mark a column as non-PII; that is left `tbd` for a human or the PII Classifier agent to decide.
 
@@ -195,7 +199,7 @@ Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith c
 - [x] Rules engine and column profiler (config-driven, tested on the demo feed)
 - [x] Intake UI: upload, profiling in a web worker, spec grid with source badges and inline editing
 - [x] Spec editor and Confluence publishing with dry run (idempotent, fails closed on outside edits, run history)
-- [ ] Gatekeeper, Jira story planner and run history
+- [x] Gatekeeper, Jira story planner and run history
 - [ ] Relationship detection, ER diagram and export pack
 - [ ] Rovo agent crew, guardrails and the suggestion review panel
 - [ ] Test design and traceability

@@ -18,6 +18,24 @@ export interface ConfluenceLinks {
   pages: Record<string, PageLink>;
 }
 
+export interface IssueRef {
+  key: string;
+  id: string;
+  /** sha256 of the summary + description text SpecSmith last wrote. */
+  contentHash: string;
+  url?: string;
+  /** Confluence URL the issue's remote link points to, once set. */
+  specUrl?: string;
+}
+
+export interface JiraLinks {
+  projectKey: string;
+  projectId: string;
+  epic?: IssueRef;
+  /** Keyed by story template key. */
+  stories: Record<string, IssueRef>;
+}
+
 export interface FeedMeta {
   feedId: string;
   name: string;
@@ -26,6 +44,7 @@ export interface FeedMeta {
   /** File names in this feed (each stored separately). */
   files: string[];
   confluence?: ConfluenceLinks;
+  jira?: JiraLinks;
 }
 
 export type RowStatus = 'created' | 'updated' | 'skipped' | 'failed' | 'dry-run';
@@ -44,7 +63,7 @@ export interface RunRow {
 export interface RunRecord {
   runId: string;
   feedId: string;
-  kind: 'publish-confluence';
+  kind: 'publish-confluence' | 'plan-stories';
   dryRun: boolean;
   actor: string | null;
   startedAt: string;
