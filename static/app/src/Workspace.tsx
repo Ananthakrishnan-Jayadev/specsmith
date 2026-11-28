@@ -11,6 +11,9 @@ import { SpecGrid } from './spec/SpecGrid';
 import { PublishPanel } from './PublishPanel';
 import { StoriesPanel } from './StoriesPanel';
 import { RunHistory } from './RunHistory';
+import { RelationshipsPanel } from './RelationshipsPanel';
+import type { Relationship } from '../../../src/domain/relationship';
+import { detectRelationships, mergeRelationships } from '../../../src/rules/relationships';
 
 /** Frontend invoke payload limit is 500 KB (Forge docs); keep headroom. */
 const MAX_SPEC_CHARS = 450_000;
@@ -33,6 +36,17 @@ export function Workspace() {
   const [revision, setRevision] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runsVersion, setRunsVersion] = useState(0);
+  const [relationships, setRelationshipsRaw] = useState<Relationship[]>([]);
+  const setRelationships = (r: Relationship[]) => {
+    setRelationshipsRaw(r);
+    setRevision((v) => v + 1);
+  };
+  // Hashes exist only for files profiled in this browser session (never stored).
+  const canDetect = specs.length > 0 && specs.every((s) => s.columns.some((c) => c.profile.valueHashes.length > 0));
+  useEffect(() => {
+    if (!canDetect) return;
+    setRelationshipsRaw((existing) => mergeRelationships(existing, detectRelationships(specs), specs.map((s) => s.fileName)));
+  }, [specs, canDetect]);
 
   /** Every spec change bumps the revision, which invalidates an earlier preview. */
   const setSpecs = useCallback((fn: (ss: FileSpec[]) => FileSpec[]) => {
@@ -52,6 +66,7 @@ export function Workspace() {
       setFeedName(meta.name);
       setFiles([]);
       setSpecs(() => loaded.sort((a, b) => a.fileName.localeCompare(b.fileName)));
+      setRelationshipsRaw(meta.relationships ?? []);
       setActive(loaded[0]?.fileName ?? null);
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : String(e));
@@ -73,7 +88,7 @@ export function Workspace() {
     const clean = specs.map(sanitizeForUpload);
     const tooBig = clean.find((s) => JSON.stringify(s).length > MAX_SPEC_CHARS);
     if (tooBig) throw new Error(`${tooBig.fileName} is too large to save in one request (over ${MAX_SPEC_CHARS.toLocaleString()} characters).`);
-    const meta = await api('saveFeed', { feedId: feed?.feedId ?? null, name: feedName, fileNames: clean.map((s) => s.fileName) });
+    const meta = await api('saveFeed', { feedId: feed?.feedId ?? null, name: feedName, fileNames: clean.map((s) => s.fileName), relationships });
     for (const spec of clean) await api('saveFile', { feedId: meta.feedId, spec });
     setFeed(meta);
     return meta;
@@ -128,11 +143,15 @@ export function Workspace() {
             <span className="field-label">Open a saved feed</span>
             <select value={feed?.feedId ?? ''} onChange={(e) => e.target.value && void openFeed(e.target.value)}>
               <option value="">{feed ? 'Unsaved changes' : 'Choose…'}</option>
-              {savedFeeds.map((f) => <option key={f.feedId} value={f.feedId}>{f.name} ({f.files.length} files)</option>)}
+              {savedFeeds.map((f) => (
+                <option key={f.feedId} value={f.feedId}>
+                  {f.name} · {f.files.length} files · {f.confluence?.parent ? `published to ${f.confluence.spaceKey}` : 'not published'} · id {f.feedId}
+                </option>
+              ))}
             </select>
           </label>
         )}
-        {feed && <span className="muted saved-note">Saved as {feed.feedId}{feed.confluence ? ` · published to ${feed.confluence.spaceKey}` : ''}</span>}
+        {feed && <span className="muted saved-note">Saved as {feed.feedId}{feed.confluence?.parent ? ` · published to ${feed.confluence.spaceKey}` : ''}</span>}
       </div>
       {loadError && <p className="status-error">{loadError}</p>}
 
@@ -182,6 +201,7 @@ export function Workspace() {
             })}
           </div>
           <SpecGrid spec={current} onChange={(next) => setSpecs((ss) => ss.map((s) => (s.fileName === next.fileName ? next : s)))} />
+          <RelationshipsPanel specs={specs} relationships={relationships} canDetect={canDetect} onChange={setRelationships} />
           <PublishPanel feed={feed} revision={revision} save={save} onRun={afterRun} />
           <StoriesPanel feed={feed} revision={revision} save={save} onRun={afterRun} />
           <RunHistory feedId={feed?.feedId ?? null} version={runsVersion} />

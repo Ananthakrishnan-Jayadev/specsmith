@@ -13,7 +13,7 @@ export function StoriesPanel(props: { feed: FeedMeta | null; revision: number; s
     api('listSpaces').then((t) => setProjects(t.projects)).catch(() => undefined);
   }, []);
 
-  const locked = feed?.jira?.projectKey ?? null;
+  const locked = feed?.jira?.epic ? feed.jira.projectKey : null;
   useEffect(() => {
     if (locked) setProjectKey(locked);
     else setProjectKey((k) => k || projects[0]?.key || '');

@@ -20,6 +20,7 @@ import { fileTitle, parentTitle, renderFilePage, renderParentPage, type Delivery
 import { VersionConflictError, type ConfluencePort, type PageInfo } from './confluence-port';
 import { planAttachment } from './attachment-plan';
 import type { ExportFile } from '../exporters';
+import type { Relationship } from '../domain/relationship';
 
 export const PARENT = '__parent__';
 
@@ -33,6 +34,7 @@ export interface PublishInput {
   delivery?: Delivery;
   /** Files attached to the parent page (export pack). */
   exports?: ExportFile[];
+  relationships?: Relationship[];
 }
 
 interface Target {
@@ -58,7 +60,12 @@ export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex'
 function targetsFor(input: PublishInput): Target[] {
   const mk = (key: string, title: string, body: string): Target => ({ key, title, body, bodyHash: sha256(body) });
   return [
-    mk(PARENT, parentTitle(input.feedName), renderParentPage(input.feedName, input.files, input.delivery, (input.exports ?? []).map(({ name, description }) => ({ name, description })))),
+    mk(PARENT, parentTitle(input.feedName), renderParentPage(input.feedName, input.files, {
+      ...(input.delivery ? { delivery: input.delivery } : {}),
+      exports: (input.exports ?? []).filter((e) => e.contentType !== 'image/svg+xml').map(({ name, description }) => ({ name, description })),
+      relationships: input.relationships ?? [],
+      ...((input.exports ?? []).some((e) => e.name === 'erd.svg') ? { erdFile: 'erd.svg' } : {}),
+    })),
     ...[...input.files].sort((a, b) => a.fileName.localeCompare(b.fileName)).map((f) => mk(f.fileName, fileTitle(input.feedName, f), renderFilePage(input.feedName, f))),
   ];
 }
@@ -86,7 +93,10 @@ async function decide(port: ConfluencePort, spaceId: string, feedId: string, t: 
   const only = matches[0] as PageInfo;
   const owner = await port.getOwner(only.id);
   if (owner?.feedId === feedId) return { action: 'update', page: only, adopted: true };
-  return { action: 'fail', reason: `A page titled "${t.title}" already exists and was not created by this SpecSmith feed. Rename or move it, or publish to another space.` };
+  if (owner) {
+    return { action: 'fail', reason: `A page titled "${t.title}" belongs to another SpecSmith feed (id ${owner.feedId}). Open that feed to update it, or rename this feed.` };
+  }
+  return { action: 'fail', reason: `A page titled "${t.title}" already exists and was not created by SpecSmith. Rename or move it, or publish to another space.` };
 }
 
 function planRow(t: Target, d: Decision, dryRun: boolean): RunRow {

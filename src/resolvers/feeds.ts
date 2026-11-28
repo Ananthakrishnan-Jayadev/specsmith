@@ -5,6 +5,7 @@
 import type { FeedMeta, RunRecord } from '../domain/feed';
 import { countRows } from '../domain/feed';
 import type { FileSpec } from '../domain/spec';
+import type { Relationship } from '../domain/relationship';
 import { FeedRepo, newFeedId } from '../storage/feeds';
 import { forgeKV, listByPrefix } from '../storage/forge-kv';
 import { publishSpecPages } from '../gatekeeper/publish';
@@ -18,15 +19,22 @@ import { sanitizeForUpload } from '../spec/sanitize';
 const repo = () => new FeedRepo(forgeKV);
 const now = () => new Date().toISOString();
 
-export async function saveFeed(p: { feedId: string | null; name: string; fileNames: string[] }): Promise<FeedMeta> {
+export async function saveFeed(p: { feedId: string | null; name: string; fileNames: string[]; relationships: Relationship[] }): Promise<FeedMeta> {
   const name = p.name.trim();
   if (!name || name.length > 80) throw new Error('Feed name must be 1–80 characters.');
   const r = repo();
   const existing = p.feedId ? await r.get(p.feedId) : undefined;
   if (p.feedId && !existing) throw new Error(`Feed ${p.feedId} not found.`);
+  // Fail closed on duplicate names: two feeds with one name would publish to the same page titles.
+  // Checked only when creating or renaming, so feeds that already share a name can still be saved.
+  const renaming = !existing || existing.name.trim().toLowerCase() !== name.toLowerCase();
+  const clash = renaming ? (await r.list()).find((f) => f.feedId !== existing?.feedId && f.name.trim().toLowerCase() === name.toLowerCase()) : undefined;
+  if (clash) throw new Error(`A feed named "${clash.name}" already exists (id ${clash.feedId}). Open it from "Open a saved feed", or choose another name.`);
+  if (p.relationships.length > 200) throw new Error('Too many relationships.');
+  const relationships = p.relationships.filter((r) => p.fileNames.includes(r.fromFile) && p.fileNames.includes(r.toFile));
   const meta: FeedMeta = existing
-    ? { ...existing, name, files: p.fileNames, updatedAt: now() }
-    : { feedId: newFeedId(), name, files: p.fileNames, createdAt: now(), updatedAt: now() };
+    ? { ...existing, name, files: p.fileNames, relationships, updatedAt: now() }
+    : { feedId: newFeedId(), name, files: p.fileNames, relationships, createdAt: now(), updatedAt: now() };
   for (const gone of (existing?.files ?? []).filter((f) => !p.fileNames.includes(f))) await r.deleteFile(meta.feedId, gone);
   await r.put(meta);
   return meta;
@@ -66,12 +74,14 @@ export async function publishFeed(
     confluencePort(ctx.siteUrl),
     {
       feedId: meta.feedId, feedName: meta.name, files, spaceKey: p.spaceKey, links: meta.confluence,
-      exports: exportPack(meta.feedId, meta.name, files),
+      exports: exportPack(meta.feedId, meta.name, files, meta.relationships ?? []),
+      relationships: meta.relationships ?? [],
       ...(meta.jira?.epic ? { delivery: { epicKey: meta.jira.epic.key, ...(meta.jira.epic.url ? { epicUrl: meta.jira.epic.url } : {}) } } : {}),
     },
     { dryRun: p.dryRun },
   );
-  if (!p.dryRun && result.links) {
+  // Only record links when something was actually published (a fully failed run must not lock the space).
+  if (!p.dryRun && result.links && (result.links.parent || Object.keys(result.links.pages).length > 0)) {
     const latest = (await r.get(meta.feedId)) ?? meta;
     await r.put({ ...latest, confluence: result.links, updatedAt: now() });
   }
@@ -108,7 +118,7 @@ export async function planFeedStories(
     { dryRun: p.dryRun },
   );
   // Re-read before writing so a concurrent Confluence publish's links are kept.
-  if (!p.dryRun && result.links) {
+  if (!p.dryRun && result.links && (result.links.epic || Object.keys(result.links.stories).length > 0)) {
     const latest = (await r.get(meta.feedId)) ?? meta;
     await r.put({ ...latest, jira: result.links, updatedAt: now() });
   }

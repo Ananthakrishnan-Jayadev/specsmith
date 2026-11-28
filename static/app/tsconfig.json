@@ -34,6 +34,7 @@
     "../../src/profile",
     "../../src/rules",
     "../../src/spec",
-    "../../src/config"
+    "../../src/config",
+    "../../src/render"
   ]
 }

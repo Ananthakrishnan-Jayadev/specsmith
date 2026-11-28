@@ -1,3 +1,5 @@
+import type { Relationship } from './relationship';
+
 /** Feeds, published-page links and the run log. */
 
 export interface PageLink {
@@ -47,6 +49,8 @@ export interface FeedMeta {
   files: string[];
   confluence?: ConfluenceLinks;
   jira?: JiraLinks;
+  /** Cross-file foreign keys (detected in the browser, decided by reviewers). */
+  relationships?: Relationship[];
 }
 
 export type RowStatus = 'created' | 'updated' | 'skipped' | 'failed' | 'dry-run';

@@ -1,10 +1,12 @@
 /** dbt schema.yml: descriptions, tests and SpecSmith provenance in `meta`. */
 import type { FileSpec } from '../domain/spec';
-import { acceptedValuesOf } from '../rules/checks';
+import { acceptedValuesOf, resolveRelationships } from '../rules/checks';
+import type { Relationship } from '../domain/relationship';
 import { formatType } from '../spec/edit';
 import { toYaml, type YamlValue } from './yaml';
 
-export function dbtExport(files: FileSpec[]): string {
+export function dbtExport(files: FileSpec[], rels: Relationship[] = []): string {
+  const fks = resolveRelationships(files, rels);
   const models = [...files]
     .sort((a, b) => a.fileName.localeCompare(b.fileName))
     .map((s): YamlValue => ({
@@ -18,6 +20,8 @@ export function dbtExport(files: FileSpec[]): string {
           if (c.primaryKey.value) tests.push('unique');
           const values = acceptedValuesOf(c);
           if (values) tests.push({ accepted_values: { values } });
+          const fk = fks.find((r) => r.fromTable === s.tableName.value && r.fromColumn === c.targetName.value);
+          if (fk) tests.push({ relationships: { to: `ref('${fk.toTable}')`, field: fk.toColumn } });
           return {
             name: c.targetName.value,
             description: c.description.value ?? 'TBD',

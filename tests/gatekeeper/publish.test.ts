@@ -69,7 +69,7 @@ describe('publishSpecPages', () => {
     c.addForeignPage('Retail: b');
     c.addForeignPage('Retail: b');
     const r = await publishSpecPages(c, input(), { dryRun: true });
-    expect(r.rows[1]?.message).toMatch(/not created by this SpecSmith feed/);
+    expect(r.rows[1]?.message).toMatch(/already exists and was not created by SpecSmith/);
     expect(r.rows[2]?.message).toMatch(/2 pages are titled "Retail: b".*Refusing to guess/);
   });
 
@@ -154,5 +154,14 @@ describe('export attachments', () => {
     const r2 = await publishSpecPages(c2, withExports(), { dryRun: false });
     expect(r2.rows.slice(0, 3).every((x) => x.status === 'created')).toBe(true);
     expect(r2.rows.slice(-2).every((x) => x.status === 'failed')).toBe(true);
+  });
+});
+
+describe('pages owned by another feed', () => {
+  it('names the owning feed so the user can open it', async () => {
+    const c = new FakeConfluence();
+    await publishSpecPages(c, { ...input(), feedId: 'other' }, { dryRun: false });
+    const r = await publishSpecPages(c, input(), { dryRun: true });
+    expect(r.rows[0]?.message).toMatch(/belongs to another SpecSmith feed \(id other\)/);
   });
 });

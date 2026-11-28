@@ -4,7 +4,8 @@
  */
 import type { ColumnSpec, FieldValue, FileSpec } from '../domain/spec';
 import { formatType, specStats } from '../spec/edit';
-import { COLOURS, attachmentLink, bulletList, childrenMacro, escapeXml, externalLink, heading, infoPanel, paragraph, table, type Cell } from './storage';
+import type { Relationship } from '../domain/relationship';
+import { COLOURS, attachedImage, attachmentLink, bulletList, childrenMacro, escapeXml, externalLink, heading, infoPanel, paragraph, table, type Cell } from './storage';
 
 export const parentTitle = (feedName: string) => `${feedName}: Feed Spec`;
 export const fileTitle = (feedName: string, spec: FileSpec) => `${feedName}: ${spec.tableName.value}`;
@@ -49,7 +50,35 @@ export interface ExportRef {
   description: string;
 }
 
-export function renderParentPage(feedName: string, files: FileSpec[], delivery?: Delivery, exports: ExportRef[] = []): string {
+export interface ParentPageOptions {
+  delivery?: Delivery;
+  exports?: ExportRef[];
+  relationships?: Relationship[];
+  /** Attachment name of the ER diagram, when it is attached. */
+  erdFile?: string;
+}
+
+function relationshipsSection(files: FileSpec[], rels: Relationship[], erdFile?: string): string[] {
+  if (rels.length === 0) return [];
+  const table_ = (file: string) => files.find((f) => f.fileName === file)?.tableName.value ?? file;
+  const rows = [...rels].sort((a, b) => a.id.localeCompare(b.id)).map((r): Cell[] => {
+    const status = r.decision.value === 'accepted' ? 'Confirmed' : r.decision.value === 'rejected' ? 'Rejected' : 'Proposed';
+    return [
+      { text: `${table_(r.fromFile)}.${r.fromColumn}`, code: true },
+      { text: `${table_(r.toFile)}.${r.toColumn}`, code: true },
+      { text: `${(r.overlap * 100).toFixed(1)}%` },
+      { text: status, ...(r.decision.source === 'derived' ? { highlight: COLOURS.grey } : {}) },
+    ];
+  });
+  return [
+    heading(2, 'Relationships'),
+    ...(erdFile ? [attachedImage(erdFile)] : []),
+    table(['From', 'To', 'Value overlap', 'Status'], rows),
+  ];
+}
+
+export function renderParentPage(feedName: string, files: FileSpec[], opts: ParentPageOptions = {}): string {
+  const { delivery, exports = [], relationships = [], erdFile } = opts;
   const sorted = [...files].sort((a, b) => a.fileName.localeCompare(b.fileName));
   const rows = sorted.map((f): Cell[] => {
     const st = specStats(f);
@@ -72,6 +101,7 @@ export function renderParentPage(feedName: string, files: FileSpec[], delivery?:
     ...(delivery
       ? [heading(2, 'Delivery'), `<p>Jira epic: ${delivery.epicUrl ? externalLink(delivery.epicKey, delivery.epicUrl) : delivery.epicKey}</p>`]
       : []),
+    ...relationshipsSection(sorted, relationships, erdFile),
     ...(exports.length
       ? [heading(2, 'Exports'), paragraph('Generated from this spec and attached to this page. They update automatically when the spec changes.'),
          `<ul>${exports.map((e) => `<li>${attachmentLink(e.name)}: ${escapeXml(e.description)}</li>`).join('')}</ul>`]

@@ -33,8 +33,8 @@ describe('exportPack on the demo feed', () => {
   const pack = exportPack('fdemo', 'Retail Accounts', demoFeed());
   const file = (n: string) => pack.find((f) => f.name === n)?.content ?? '';
 
-  it('produces five files deterministically', () => {
-    expect(pack.map((f) => f.name)).toEqual(['ddl.sql', 'schema.yml', 'data-contract.yaml', 'feed.schema.json', 'checks.sql']);
+  it('produces six files deterministically', () => {
+    expect(pack.map((f) => f.name)).toEqual(['erd.svg', 'ddl.sql', 'schema.yml', 'data-contract.yaml', 'feed.schema.json', 'checks.sql']);
     expect(exportPack('fdemo', 'Retail Accounts', demoFeed())).toEqual(pack);
   });
 
@@ -60,8 +60,9 @@ describe('exportPack on the demo feed', () => {
     if (!accounts) throw new Error('missing accounts');
     const files = [editField(accounts, 'acct_id', 'description', "Account's unique id"), ...rest];
     const p = exportPack('fdemo', 'Retail Accounts', files);
-    expect(p[0]?.content).toContain("COMMENT ON COLUMN curated.accounts.account_id IS 'Account''s unique id';");
-    expect(p[1]?.content).toContain('description: "Account\'s unique id"');
+    const get = (n: string) => p.find((x) => x.name === n)?.content ?? '';
+    expect(get('ddl.sql')).toContain("COMMENT ON COLUMN curated.accounts.account_id IS 'Account''s unique id';");
+    expect(get('schema.yml')).toContain('description: "Account\'s unique id"');
   });
 
   // Golden files: review the diff whenever an exporter changes on purpose (vitest -u to accept).
@@ -70,4 +71,27 @@ describe('exportPack on the demo feed', () => {
       await expect(file(name)).toMatchFileSnapshot(`./golden/${name}`);
     });
   }
+});
+
+describe('relationships in exports', () => {
+  it('adds FK constraints, dbt relationships tests, fk checks and an ERD', async () => {
+    const { detectRelationships, decideRelationship } = await import('../../src/rules/relationships');
+    const files = demoFeed();
+    let rels = detectRelationships(files);
+    rels = decideRelationship(rels, rels[1]?.id ?? '', 'accepted');
+    rels = decideRelationship(rels, rels[0]?.id ?? '', 'rejected');
+    const pack = exportPack('fdemo', 'Retail Accounts', files, rels);
+    const f = (n: string) => pack.find((x) => x.name === n)?.content ?? '';
+    expect(f('ddl.sql')).toContain('-- Confirmed by a reviewer: ');
+    expect(f('ddl.sql')).toContain('ALTER TABLE curated.cards ADD CONSTRAINT fk_cards_account_id FOREIGN KEY (account_id) REFERENCES curated.accounts (account_id);');
+    expect(f('ddl.sql')).not.toContain('fk_accounts_customer_id'); // rejected
+    expect(f('schema.yml')).toContain(`to: "ref('accounts')"`);
+    expect(f('checks.sql')).toContain('-- chk-transactions-account_id-fk: transactions.account_id, expected every value exists in accounts.account_id');
+    const svg = f('erd.svg');
+    expect(svg.startsWith('<svg')).toBe(true);
+    expect(svg).toContain('>accounts</text>');
+    expect(svg.match(/<path d="M[^"]*" fill="none"/g)?.length).toBe(2); // two active relationship lines
+    expect(svg).toContain('stroke-dasharray'); // the proposed one is dashed
+    await expect(svg).toMatchFileSnapshot('./golden/erd.svg');
+  });
 });

@@ -9,6 +9,9 @@
 
 import type { FeedMeta, RunRecord } from '../domain/feed';
 import type { FileSpec } from '../domain/spec';
+import type { Relationship } from '../domain/relationship';
+
+export type { Relationship } from '../domain/relationship';
 
 export type { FeedMeta, RunRecord, RunRow, RowStatus } from '../domain/feed';
 export type { FileSpec } from '../domain/spec';
@@ -60,7 +63,7 @@ export type SpecSmithApi = {
   listSpaces: () => Targets;
   listFeeds: () => FeedMeta[];
   getFeed: (p: { feedId: string }) => { meta: FeedMeta; files: FileSpec[] };
-  saveFeed: (p: { feedId: string | null; name: string; fileNames: string[] }) => FeedMeta;
+  saveFeed: (p: { feedId: string | null; name: string; fileNames: string[]; relationships: Relationship[] }) => FeedMeta;
   saveFile: (p: { feedId: string; spec: FileSpec }) => { ok: true };
   publishFeed: (p: { feedId: string; spaceKey: string; dryRun: boolean }) => RunRecord;
   planFeedStories: (p: { feedId: string; projectKey: string; dryRun: boolean }) => RunRecord;

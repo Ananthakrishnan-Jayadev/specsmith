@@ -110,10 +110,13 @@ Reload the page to see UI changes. Restart the tunnel after editing `manifest.ym
 5. Click **Approve & publish**. Each page reports `created`, `updated`, `skipped` or `failed`, and every run is kept in **Run history**.
 6. Under **Plan the delivery in Jira**, pick a project, preview, and approve. SpecSmith creates an Epic and seven stories from `config/story-templates.json`, with BDD acceptance criteria, story points, "Blocks" dependencies and links to the spec. The spec's parent page links back to the Epic.
 
+SpecSmith also finds **relationships** between files. A column whose values (compared as hashes, in your browser) almost all appear in another file's primary key is proposed as a foreign key, with the evidence shown. You confirm or reject each one. Confirmed and proposed relationships appear in the ER diagram, as `FOREIGN KEY` constraints in the DDL, as dbt `relationships` tests and as foreign-key checks; rejected ones are left out.
+
 Every publish also attaches an **export pack** to the spec's parent page. An attachment is only re-uploaded when its content changed.
 
 | File | Contents |
 |---|---|
+| `erd.svg` | An entity relationship diagram, also shown on the spec's parent page |
 | `ddl.sql` | ANSI SQL `CREATE` statements for the raw, curated and analytics zones. The analytics views leave out PII/PCI columns until a masking policy is approved. |
 | `schema.yml` | dbt models with descriptions and `not_null`, `unique` and `accepted_values` tests |
 | `data-contract.yaml` | A data contract in the Open Data Contract Standard (v3) layout, with classifications |
@@ -211,7 +214,7 @@ Each scope is the one Atlassian's OpenAPI spec lists for an endpoint SpecSmith c
 - [x] Spec editor and Confluence publishing with dry run (idempotent, fails closed on outside edits, run history)
 - [x] Gatekeeper, Jira story planner and run history
 - [x] Export pack: DDL, dbt `schema.yml`, data contract, JSON Schema, SQL checks (attached to the spec, golden-file tested)
-- [ ] Relationship detection and ER diagram
+- [x] Relationship detection and ER diagram
 - [ ] Rovo agent crew, guardrails and the suggestion review panel
 - [ ] Test design and traceability
 - [ ] Review and sign-off workflow

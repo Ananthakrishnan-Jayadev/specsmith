@@ -19,7 +19,7 @@ export function PublishPanel(props: { feed: FeedMeta | null; revision: number; s
       .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  const locked = feed?.confluence?.spaceKey ?? null;
+  const locked = feed?.confluence?.parent ? feed.confluence.spaceKey : null;
   useEffect(() => {
     if (locked) setSpaceKey(locked);
     else setSpaceKey((k) => k || spaces[0]?.key || '');

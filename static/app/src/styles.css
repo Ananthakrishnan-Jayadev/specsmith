@@ -140,3 +140,13 @@ td.profile .samples { overflow-wrap: anywhere; }
 .runs { margin-top: 12px; font-size: 13px; }
 .runs ul { list-style: none; padding-left: 0; }
 .runs summary { cursor: pointer; }
+
+/* ---- Relationships ---- */
+.row-muted td { opacity: 0.55; }
+.actions { white-space: nowrap; }
+.actions .chip + .chip { margin-left: 4px; }
+.loz-ok { background: var(--ds-background-success, #dcfff1); color: var(--ss-success); }
+.erd { margin-top: 12px; }
+.erd summary { cursor: pointer; font-size: 13px; color: var(--ss-muted); }
+.erd-canvas { overflow-x: auto; border: 1px solid var(--ss-border); border-radius: 6px; margin-top: 8px; background: #ffffff; }
+.erd-canvas svg { display: block; }
